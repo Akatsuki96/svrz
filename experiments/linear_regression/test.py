@@ -5,14 +5,14 @@ from ssvr.optimizer import  SZD, SVRZD, LSVRZD, SAGAZD, SPIDER_ZD, TL_SVR_ZD, SA
 from ssvr.directions import QRDirections
 
 from math import sqrt
-gen = torch.Generator()
-gen.manual_seed(12131415)
 
-d =  20
+d =  50
 l = 20
-n = 500
-device = 'cpu'
+n = 5000
+device = 'cuda'
 dtype= torch.float64
+gen = torch.Generator(device=device)
+gen.manual_seed(12131415)
 
 def execute_experiment(optimizer, params, out_file, reps = 10):
     
@@ -39,8 +39,8 @@ def execute_experiment(optimizer, params, out_file, reps = 10):
     
     
 
-X =  torch.randn(n, d, generator=gen,dtype=dtype)
-w_star = torch.randn(d, generator=gen, dtype=dtype)
+X =  torch.randn(n, d, generator=gen,dtype=dtype, device=device)
+w_star = 20*torch.randn(d, generator=gen, dtype=dtype, device=device) + 10
 
 y = X @ w_star
 seed = 12131415
@@ -50,7 +50,7 @@ def target(w, z = None):
    # print(torch.square(w @ X[z, :] - y[z]).shape)
     return torch.square(w @ X[z, :].T - y[z]).reshape(-1, 1)
 
-w = torch.full((1, d), 12000.0, dtype=dtype)
+w = torch.full((1, d), 12000.0, dtype=dtype, device=device)
 
 P = QRDirections(d =d, l=l, seed=seed, device=device, dtype=dtype)
 
@@ -60,7 +60,7 @@ szd_opt = SZD(target, n = n, P = P, seed= seed)
 sagazd_opt = TL_SVR_ZD(target, n=n, P=P, seed=seed)
 sarah_opt = SARAH_Plus_ZD(target, n=n, P=P, seed=seed)
 
-gamma = lambda t, x, f : 0.01 *  (1/sqrt(t + 1))
+gamma = lambda t, x, f : 0.1 *  (1/sqrt(t + 1))
 h = lambda t : 1e-5#1e-3 * (l/d) * (1/(t + 1)**2)
 m = 100
 # svrg => stocahstic f evals = T * (n + 2*m ) * (l + 1) 
@@ -93,7 +93,7 @@ T_saga = T_szd - n * (l + 1)
 execute_experiment(sarah_opt, dict(x0=w.clone(), T=T_svrg, m=m, eta=1/8, gamma=0.01, h=h, verbose=verbose), "tlsvrzd_results", reps = 1)
 # execute_experiment(lsvr_zd_opt, dict(x0=w.clone(), T=T_svrg, gamma=0.5, p=0.7, h=h, verbose=verbose), "lsvrzd_results", reps = reps)
 # execute_experiment(svr_zd_opt, dict(x0=w.clone(), T=T_svrg, gamma=0.01, m=m, h=h, verbose=verbose), "svrzd_results", reps = reps)
-# execute_experiment(szd_opt, dict(x0=w.clone(), T=T_szd, gamma=gamma, h=h, verbose=verbose), "szd_results", reps = reps)
+#execute_experiment(szd_opt, dict(x0=w.clone(), T=T_szd, gamma=gamma, h=h, verbose=verbose), "szd_results", reps = reps)
 
 
 # szd_svrg.optimize(w.clone(), T = T, m = m, option='average', gamma=0.05, h=h, verbose=True)

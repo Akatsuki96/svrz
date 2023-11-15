@@ -8,12 +8,13 @@ from itertools import islice
 from torchvision import datasets, transforms
 class Attack:
     
-    def __init__(self, model, data_loader, class_label=1, max_img = None,lam = 0.1) -> None:
+    def __init__(self, model, data_loader, class_label=1, max_img = None,lam = 0.1, device = 'cpu') -> None:
         self.model = model
         self.data_loader = data_loader
         self.lam = lam
         self.max_img = max_img
         self.class_label = class_label
+        self.device = device
         self.X, self.y = [], []
         self._initialize()
     @property
@@ -29,7 +30,7 @@ class Attack:
             x.requires_grad = False
             out = self.model(x).max(1, keepdim=True)[1]
             img_shape = list(x.shape)
-            if out != y:
+            if out.cpu() != y:
                 continue
             if y.item() == self.class_label:
                 self.X.append(x.tolist())
@@ -37,8 +38,8 @@ class Attack:
             if self.max_img is not None and len(self.X) == self.max_img:
                 break
         img_shape[0] = len(self.X)
-        self.X = torch.Tensor(self.X).reshape(img_shape)
-        self.y = torch.Tensor(self.y).reshape((-1, 1))
+        self.X = torch.Tensor(self.X).reshape(img_shape).to(device=self.device)
+        self.y = torch.Tensor(self.y).reshape((-1, 1)).to(device=self.device)
         
     def generate_adv_example(self, x, v):
         x_adv = 0.5*torch.tanh(2*torch.atanh(x) + v)#x + v# 0.5 * torch.tanh(torch.atanh(2*x) + v)
@@ -48,30 +49,38 @@ class Attack:
     
     def denorm(self, batch, mean=[0.1307], std=[0.3081]):
         if isinstance(mean, list):
-            mean = torch.tensor(mean)
+            mean = torch.tensor(mean, device=self.device)
         if isinstance(std, list):
-            std = torch.tensor(std)
+            std = torch.tensor(std, device=self.device)
         return batch * std.view(1, -1, 1, 1) + mean.view(1, -1, 1, 1)
         
     def _loss(self, x, y, v):
-        y = y.to(torch.int32).reshape(-1)
+        y = y.to(torch.int64).reshape(-1)
         x_adv = self.generate_adv_example(self.denorm(x), v)
         x_adv = transforms.Normalize((0.1307,), (0.3081,))(x_adv)
         output = self.model(x_adv)
+        # print("XADV OUT", x_adv.shape, output.shape)    
         F_y = output[range(output.shape[0]), y].reshape(-1, 1)
         F_t = output#.clone()
         F_t[range(output.shape[0]), y] = -np.inf
-
+        # print(F_y.shape, F_t.shape)
+        # print(F_t.max(dim=1, keepdims=True))       
         adv_error = (F_y - F_t.max(dim=1, keepdims=True).values)
         distortion = (x_adv - x)
-        adv_distortion = torch.linalg.norm(distortion.reshape((distortion.shape[0], -1)), ord=2, dim=1, keepdims=True)
-        loss = torch.maximum(adv_error, torch.zeros(adv_error.shape) )+ self.lam * adv_distortion
+        adv_distortion = torch.linalg.norm(distortion.reshape(x.shape[0], -1), dim=1, keepdims=True)
+        # print(adv_distortion.shape)       
+        # print(torch.maximum(adv_error, torch.zeros(adv_error.shape, device=self.device)).shape)
+        # exit()
+        #print(adv_error.device, adv_distortion.device)
+        loss = torch.maximum(adv_error, torch.zeros(adv_error.shape, device='cuda')) + self.lam * adv_distortion
+       # print(loss.shape)
         return loss
     
     def __call__(self, v, z = None) -> Any:
         v = v.view((-1, self.data_shape[0], self.data_shape[1], self.data_shape[2]))
         if z is None:
-            return self._loss(self.X, self.y, v).mean()
-        x, y = self.X[z], self.y[z]
-        #print(self.X.shape, self.y.shape)
+   #         print("X Y V", self.X.shape, self.y.shape, v.shape)
+            return self._loss(self.X, self.y, v).mean(dim=0, keepdim=True)
+        x, y = self.X[z, :, :, :], self.y[z]
+    #    print("S: ", self.X.shape, self.y.shape)
         return self._loss(x, y, v)

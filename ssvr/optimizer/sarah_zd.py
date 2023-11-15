@@ -35,10 +35,10 @@ class SARAH_ZD(GVR_ZD):
             else:
                 raise NotImplementedError()
             it_time = time.time() - it_time
-            f_values.append(self.target(x_k))
+            f_values.append(self.target(x_k).cpu().item())
             it_times.append(it_time)
             if verbose:
-                print("[SARAH-ZD] k = {}/{}\tf(x_k) = {}".format(tau, T, f_values[-1]))
+                print("[SARAH-ZD] k = {}/{}\tf(x_k) = {}".format(tau, T, f_values[-1].cpu().item()))
         return dict(x=x_k, f_values=f_values, it_times=it_times)       
             
 
@@ -76,7 +76,7 @@ class SARAH_Plus_ZD(GVR_ZD):
             else:
                 raise NotImplementedError()
             it_time = time.time() - it_time
-            f_values.append(self.target(x_k))
+            f_values.append(self.target(x_k).cpu().item())
             it_times.append(it_time)
             if verbose:
                 print("[SARAH+-ZD] k = {}/{}\tf(x_k) = {}".format(tau, T, f_values[-1]))

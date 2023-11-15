@@ -13,7 +13,7 @@ class GVR_ZD:
                  P : DirectionMatrix, 
                  P_full : Optional[DirectionMatrix] = None,
                  seed : int = 12131415,
-                 bounds : Optional[torch.Tensor] = None
+                 bounds : Optional[torch.Tensor] = None,
                  ) -> None:
         self.target = target
         self.n = n
@@ -28,7 +28,7 @@ class GVR_ZD:
     def _build_g(self, x, fx, h, P, z = None):
         f_values : torch.Tensor = self.target(x + h * P.T, z=z)
         f_values.add_(fx, alpha=-1.0).div_(h)
-        return (P @ f_values).T 
+        return (P @ f_values).T
 
     def _project(self, x : torch.Tensor):
         if self.bounds is None:

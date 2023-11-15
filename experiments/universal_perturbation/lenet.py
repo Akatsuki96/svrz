@@ -5,16 +5,19 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 
 class LeNet(nn.Module):
-    def __init__(self):
+    def __init__(self, device):
+        self.device = device
         super(LeNet, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, 3, 1, dtype=torch.float32)
-        self.conv2 = nn.Conv2d(32, 64, 3, 1, dtype=torch.float32)
+        self.conv1 = nn.Conv2d(1, 32, 3, 1,  dtype=torch.float32, device=device)
+        self.conv2 = nn.Conv2d(32, 64, 3, 1, dtype=torch.float32, device=device)
         self.dropout1 = nn.Dropout(0.25)
         self.dropout2 = nn.Dropout(0.5)
-        self.fc1 = nn.Linear(9216, 128, dtype=torch.float32)
-        self.fc2 = nn.Linear(128, 10, dtype=torch.float32)
+        self.fc1 = nn.Linear(9216, 128, dtype=torch.float32, device=device)
+        self.fc2 = nn.Linear(128, 10, dtype=torch.float32, device=device)
 
     def forward(self, x):
+       # print(x.device)
+        x = x.to(self.device)
         x = F.relu(self.conv1(x), inplace=True)
         x = F.relu(self.conv2(x), inplace=True)
         x = F.max_pool2d(x, 2)
