@@ -7,7 +7,7 @@ def get_requirements():
     return requirements
 
 setup(
-	name="ssvr",
+	name="gzvr",
 	version="0.0.1",
 	author="Akatsuki96",
 	author_email="marco.rando0396@gmail.com",
