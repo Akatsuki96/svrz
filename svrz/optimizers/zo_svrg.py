@@ -1,0 +1,73 @@
+
+import tqdm
+import torch
+from time import time
+from torch import Tensor
+from typing import Dict, Callable
+
+from svrz.utils import TargetFunction
+from svrz.directions import DirectionGenerator, CoordinateDirections, SphericalDirections
+from svrz.optimizers.abs_opt import AbsOptimizer
+
+class ZOSVRG(AbsOptimizer):
+
+    def __init__(self, 
+                 d : int,
+                 l : int,
+                 dtype : torch.dtype,
+                 device : str = 'cpu', 
+                 estimator : str = 'ave', # can be 'ave' or 'coord'
+                 batch_size : int = 1,
+                 seed : int = 12131415):
+        assert estimator == 'ave' or estimator == 'coord'
+        self.estimator = estimator
+        if estimator == 'coord':
+            P = CoordinateDirections(d = d, l= d, seed= seed, device=device, dtype=dtype)
+        else:
+            P = SphericalDirections(d = d, l= l, seed= seed, device=device, dtype=dtype)
+        super().__init__(P = P, P_full = P, seed=seed)
+        self.nrm_const = P.d / P.l
+        self.batch_size = batch_size
+        
+    def _approx_grad(self, f, x, z, fx, h, P):
+        if self.estimator == 'ave':
+            return f(x + h * P, z).add_(fx, alpha=-1).div_(h).mul(P).sum(dim=0, keepdims=True).mul_(self.nrm_const)
+        return f(x + h * P, z).add_(f(x - h * P, z), alpha=-1).div_(2 *h).mul(P).sum(dim=0, keepdims=True)
+
+
+    def optimize(self, 
+                 f : TargetFunction,  # objective function
+                 x0: Tensor,  # initial guess
+                 T: int, # number of outer iterations
+                 m : int, # number of inner iterations
+                 gamma : float, # stepsize 
+                 h : Callable[[int], float] # smoothing parameter
+                 ) -> Dict:
+        f_values = [f(x0).flatten().item()]
+        it_times = [0.0]
+        x_tau = x0.clone()
+        f_tau = f_values[-1]
+        iterator = tqdm.tqdm(range(T))
+        for tau in iterator:
+            iteration_time = time()
+            h_tau = h(tau)
+            g_full = self._approx_grad(f, x_tau, None, f_tau, h_tau, self.P_full())
+            x_k = x_tau.clone()
+            for k in range(m):
+                z_k = f.sample_z(self.batch_size)
+                P_k = self.P()
+                g_tau = self._approx_grad(f, x_tau, z_k, f(x_tau, z_k).flatten().item(), h_tau, P_k)
+                g_k = self._approx_grad(f, x_k, z_k, f(x_k, z_k).flatten().item(), h_tau, P_k)
+                x_k = x_k - gamma * (g_k - g_tau + g_full)
+            x_tau = x_k
+            f_tau = f(x_tau).flatten().item()
+            iteration_time = time() - iteration_time
+            f_values.append(f_tau)
+            it_times.append(iteration_time)
+            iterator.set_postfix({
+                'k' : f"{tau}/{T}",
+                'f_k' : f_values[-1],
+                'time' : iteration_time
+            })
+        return dict(x = x_tau, f_values = f_values, it_times = it_times)
+
