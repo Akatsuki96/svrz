@@ -40,8 +40,10 @@ class SSZD(AbsOptimizer):
             it_times.append(iteration_time)
             lst_evals.append(self.P.l + 1)
             iterator.set_postfix({
+#                'x' : x_k,
                 'k' : f"{k}/{T}",
                 'f_k' : f_values[-1],
+                '|g_k|' : g_k.norm().item(),
                 'time' : iteration_time
             })
         return dict(x = x_k, f_values = f_values, lst_evals = lst_evals, it_times = it_times, num_evals=num_evals)

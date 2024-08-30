@@ -16,6 +16,7 @@ methods = [
     ('O-SVRZ $[\\ell = 35]$' , f'{directory}/osvrz_35.log'),
     ('O-SVRZ $[\\ell = 40]$' , f'{directory}/osvrz_40.log'),
     ('O-SVRZ $[\\ell = 45]$' , f'{directory}/osvrz_45.log'),
+    ('O-SVRZ $[\\ell = 50]$' , f'{directory}/osvrz_50.log'),
 ]
 budget = 1000000
 

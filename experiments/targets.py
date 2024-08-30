@@ -89,7 +89,7 @@ class UniversalPerturbation(TargetFunction):
     def _apply_perturbation(self, images, perturbations):
         perturbations = perturbations.view(perturbations.shape[0], 1, 28, 28)
         #transforms.Normalize((0.1307,), (0.3081,))(perturbed_data)
-        return self.normalize((self.denorm(images) + perturbations))
+        return (self.denorm(images) + perturbations).clip(0, 1)
         
     def __call__(self, x, z=None, elem_wise = False):
         if z is None:
@@ -100,8 +100,10 @@ class UniversalPerturbation(TargetFunction):
                 adv_imgs = self._apply_perturbation(X, x)
                 adv_probs = self.net(adv_imgs)
                 loss = F.nll_loss(adv_probs, y.to(dtype=torch.int64), reduction='sum')
-               # print("[{}/{}] loss : {}".format(i, self.data.X.shape[0] // self.batch_size, loss))
-                losses += loss
+                l2 = torch.norm(X - adv_imgs, p=2, dim=(1, 2, 3)).square().sum() / torch.norm(X , p=2).square().sum()
+#                print(adv_imgs.shape, adv_probs.shape, x.shape, loss.shape, l2.shape)
+                losses += -loss + l2
+           #     print(adv_probs.max(1)[1], y)
             losses /= self.data.X.shape[0]
             return losses
 
@@ -113,9 +115,11 @@ class UniversalPerturbation(TargetFunction):
             labels = torch.tile(labels, (adv_imgs.shape[0], ))
             adv_probs = self.net(adv_imgs)
             loss = F.nll_loss(adv_probs, labels.to(dtype=torch.int64), reduction='none')
-            #print(loss)
-            losses += loss
+            l2 = torch.norm(imgs - adv_imgs,p=2,dim=(1,2,3)).square() / torch.norm(imgs,p=2).square()
+           # print(adv_imgs.shape, adv_probs.shape, loss.shape, l2.shape)
+            losses += -loss + l2
         losses /= z.shape[0]
+        print(losses)
         #print(losses)
         return losses.view(-1, 1)
         # print("LOSS: ", loss, x.shape)

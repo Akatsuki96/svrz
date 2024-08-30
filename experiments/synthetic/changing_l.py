@@ -67,7 +67,7 @@ h = lambda k : 1e-7#max(1e-5 / sqrt(k + 1), 1e-9)
 reps = 10
 
 m = 50
-num_directions = [1] + [i for i in range(5, d, 5)]
+num_directions = [1] + [i for i in range(5, d + 5, 5)]
 for l in num_directions:
     osvrz = OSVRZ(P = QRDirections(d = d, l = l, seed = seed, device = device, dtype = dtype), batch_size=1, seed=seed)
     cost_per_iter = (2 * (l + 1)  * m + d * (d + 1) )

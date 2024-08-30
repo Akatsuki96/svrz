@@ -45,7 +45,7 @@ class MNISTDataset(Dataset):
     def _initialize(self):
         self.X, self.y = [], []
         for (img, label) in self.data:
-            if len(self.X) > 500:
+            if len(self.X) > 1000:
                 break
             self.X.append(img[0, :, :, :].tolist())
             self.y.append(label.item())
