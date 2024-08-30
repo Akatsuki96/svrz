@@ -1,4 +1,5 @@
 import os
+import sys
 import torch
 import numpy as np
 from math import sqrt
@@ -7,7 +8,10 @@ from math import sqrt
 from svrz import SSZD, ZOSVRG, SZVR_G, ZOSVRG_CoordRand, SpiderSZO, ZOSpiderCoord, OSVRZ
 from svrz.directions import QRDirections, SphericalDirections, GaussianDirections
 
-from experiments.datasets import SyntheticDataset
+
+sys.path.append("../")
+
+from datasets import SyntheticDataset
 from targets import LeastSquares
 
 
@@ -29,7 +33,7 @@ x0 = torch.ones((1, d), dtype=dtype, device=device)
 target = LeastSquares(data=dataset, seed = seed)
 
 sszd_opt     = SSZD(P = QRDirections(d=d, l = l, seed = seed, device=device, dtype=dtype), nrm_const=d / l, seed=seed)
-gauss_opt     = SSZD(P = GaussianDirections(d=d, l = l, seed = seed, device=device, dtype=dtype), nrm_const=1.0, seed=seed)
+gauss_opt     = SSZD(P = GaussianDirections(d=d, l = l, seed = seed, device=device, dtype=dtype), nrm_const=1 /l, seed=seed)
 sph_opt     = SSZD(P = SphericalDirections(d=d, l = l, seed = seed, device=device, dtype=dtype), nrm_const= d / l, seed=seed)
 
 zosvrg_ave   = ZOSVRG(d = d, l = l, dtype = dtype, device = device, seed=seed, estimator='ave')
@@ -74,7 +78,6 @@ def test_optimizer(name, optimizer, x0, T, m, gamma, h, cost_per_iter = None, re
 
 
 gamma = lambda k : 0.01 * (l/d) * (1/sqrt(k + 1))
-gamma_gauss = lambda k : 0.0003 * (l/d) * (1/sqrt(k + 1))
 
 h = lambda k : 1e-7#max(1e-5 / sqrt(k + 1), 1e-9)
 reps = 10
@@ -83,42 +86,42 @@ m = 100
 
 
 
-# cost_per_iter = (4 * m + d * (l + 1))
-# T = budget // cost_per_iter
-# szvr_g_result = test_optimizer("szvr_g", szvr_g, x0, T, m,   0.00005,   h, cost_per_iter, reps = reps)
+cost_per_iter = (4 * m + d * (l + 1))
+T = budget // cost_per_iter
+szvr_g_result = test_optimizer("szvr_g", szvr_g, x0, T, m,   0.00005,   h, cost_per_iter, reps = reps)
 
-# cost_per_iter = (2 * (l + 1) * m + d * (l + 1))
-# T = budget // cost_per_iter
-# zosvrg_ave_result = test_optimizer("zosvrg_ave",zosvrg_ave, x0, T, m,   0.0002,   h, cost_per_iter, reps = reps)
-
-
-# cost_per_iter = (4 * d * m + 2 * d * d)
-# T = budget // cost_per_iter
-# zosvrg_coo_result = test_optimizer("zosvrg_coord", zosvrg_coord, x0, T, m, 0.003, h, cost_per_iter, reps = reps)
+cost_per_iter = (2 * (l + 1) * m + d * (l + 1))
+T = budget // cost_per_iter
+zosvrg_ave_result = test_optimizer("zosvrg_ave",zosvrg_ave, x0, T, m,   0.0002,   h, cost_per_iter, reps = reps)
 
 
-# cost_per_iter = (4 * l  * m + 2 * d * d )
-# T = budget // cost_per_iter
-# zosvrg_coord_rand_result = test_optimizer("zosvrg_coord_rand", zosvrg_coord_rand, x0, T, m, 0.0015, h, cost_per_iter, reps = reps)
+cost_per_iter = (4 * d * m + 2 * d * d)
+T = budget // cost_per_iter
+zosvrg_coo_result = test_optimizer("zosvrg_coord", zosvrg_coord, x0, T, m, 0.003, h, cost_per_iter, reps = reps)
 
-# T  = budget 
-# spider_szo_result = test_optimizer("spider_szo", spider_szo, x0, T, m, 0.001, h, None, reps = reps)
 
-# T  = budget 
-# zo_spider_coord_result = test_optimizer("zo_spider_coord", zo_spider_coord, x0, T, m, 0.0015, h, None, reps = reps)
+cost_per_iter = (4 * l  * m + 2 * d * d )
+T = budget // cost_per_iter
+zosvrg_coord_rand_result = test_optimizer("zosvrg_coord_rand", zosvrg_coord_rand, x0, T, m, 0.0015, h, cost_per_iter, reps = reps)
 
-# cost_per_iter = (2 * (l + 1)  * m + d * (d + 1) )
-# T = budget // cost_per_iter
-# osvrz_result = test_optimizer("osvrz", osvrz, x0, T, m, 0.0015, h, cost_per_iter, reps = reps)
+T  = budget 
+spider_szo_result = test_optimizer("spider_szo", spider_szo, x0, T, m, 0.001, h, None, reps = reps)
 
-# cost_per_iter = (l + 1)
-# T = budget // cost_per_iter
-# sszd_result = test_optimizer("sszd", sszd_opt, x0, T, None, gamma, h, cost_per_iter, reps = reps)
+T  = budget 
+zo_spider_coord_result = test_optimizer("zo_spider_coord", zo_spider_coord, x0, T, m, 0.0015, h, None, reps = reps)
+
+cost_per_iter = (2 * (l + 1)  * m + d * (d + 1) )
+T = budget // cost_per_iter
+osvrz_result = test_optimizer("osvrz", osvrz, x0, T, m, 0.0015, h, cost_per_iter, reps = reps)
 
 cost_per_iter = (l + 1)
 T = budget // cost_per_iter
-gauss_result = test_optimizer("gauss_opt", gauss_opt, x0, T, None, gamma_gauss, h, cost_per_iter, reps = reps)
+sszd_result = test_optimizer("sszd", sszd_opt, x0, T, None, gamma, h, cost_per_iter, reps = reps)
 
-# cost_per_iter = (l + 1)
-# T = budget // cost_per_iter
-# sph_result = test_optimizer("sph_opt", sph_opt, x0, T, None, gamma, h, cost_per_iter, reps = reps)
+cost_per_iter = (l + 1)
+T = budget // cost_per_iter
+gauss_result = test_optimizer("gauss_opt", gauss_opt, x0, T, None, gamma, h, cost_per_iter, reps = reps)
+
+cost_per_iter = (l + 1)
+T = budget // cost_per_iter
+sph_result = test_optimizer("sph_opt", sph_opt, x0, T, None, gamma, h, cost_per_iter, reps = reps)
