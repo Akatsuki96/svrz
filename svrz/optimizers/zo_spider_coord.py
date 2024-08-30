@@ -23,8 +23,8 @@ class ZOSpiderCoord(AbsOptimizer):
         self.I = P_full()
         self.batch_size = batch_size
         
-    def _approx_grad(self, f, x, z, fx, h):
-        return f(x + h * self.I, z).add_(fx, alpha=-1).div_(h).mul(self.I).sum(dim=0, keepdims=True)
+    def _approx_grad(self, f, x, z, h):
+        return f(x + h * self.I, z).add_(f(x - h * self.I, z), alpha=-1).div_(2 * h).mul(self.I).sum(dim=0, keepdims=True)
 
 
 
@@ -48,17 +48,17 @@ class ZOSpiderCoord(AbsOptimizer):
             iteration_time = time()
             h_k = h(c)
             if c % m == 0:
-                g_full = self._approx_grad(f, x_k, None, f_k, h_k)
+                g_full = self._approx_grad(f, x_k, None, h_k)
                 v_k = g_full
-                k += f.n * (self.P.d + 1)
-                l_values.append(f.n * (self.P.d + 1))
+                k += 2 * f.n * self.P.d
+                l_values.append(2 * f.n * self.P.d)
             else:
                 z_k = f.sample_z(self.batch_size)
-                g_k = self._approx_grad(f, x_k, z_k, f(x_k, z_k), h_k)
-                g_prev = self._approx_grad(f, x_prev, z_k, f(x_prev, z_k), h_k)
+                g_k = self._approx_grad(f, x_k, z_k,  h_k)
+                g_prev = self._approx_grad(f, x_prev, z_k,  h_k)
                 v_k = g_k - g_prev + v_k
-                k += 2 * self.batch_size *(self.P.d + 1)
-                l_values.append(2 * self.batch_size *(self.P.d + 1))
+                k += 4 * self.batch_size * self.P.d 
+                l_values.append(4 * self.batch_size * self.P.d)
             x_prev = x_k.clone()
             x_k = x_k - gamma * v_k
             f_k = f(x_k).flatten().item()

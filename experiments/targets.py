@@ -9,9 +9,6 @@ from svrz.utils import TargetFunction
 from torch.utils.data import Dataset
 
 
-#import numpy as np
-#import matplotlib.pyplot as plt
-
 class LeastSquares(TargetFunction):
     
     def __init__(self, 
@@ -29,6 +26,20 @@ class LeastSquares(TargetFunction):
         if elem_wise:
             return norm * ( torch.einsum('bd,bd->b', self.data.A[z, :], x)  - self.data.y[z]).view(z.shape[0], 1).norm(p = 2, dim=1, keepdim=True).square_()
         return  norm * ( torch.matmul(x, self.data.A[z, :].T)  - self.data.y[z]).norm(p = 2, dim = 1, keepdim=True).square_()
+
+
+class HyperparamTuning(TargetFunction):
+    
+    def __init__(self, 
+                 training_data : Dataset, 
+                 validation_data : Dataset,
+                 seed: int = 12131415):
+        super().__init__(validation_data.n, seed)
+        self.training_data = training_data
+        self.validation_data = validation_data
+        
+    def __call__(self, x, z=None, elem_wise = False):
+        return super().__call__(x, z)
 
 
 class Net(nn.Module):
