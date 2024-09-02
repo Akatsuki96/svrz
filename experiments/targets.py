@@ -47,20 +47,6 @@ class BBClassification(TargetFunction):
 
 
 
-class HyperparamTuning(TargetFunction):
-    
-    def __init__(self, 
-                 training_data : Dataset, 
-                 validation_data : Dataset,
-                 seed: int = 12131415):
-        super().__init__(validation_data.n, seed)
-        self.training_data = training_data
-        self.validation_data = validation_data
-        
-    def __call__(self, x, z=None, elem_wise = False):
-        return super().__call__(x, z)
-
-
 class Net(nn.Module):
     def __init__(self, dtype : torch.dtype = torch.float32):
         super(Net, self).__init__()
