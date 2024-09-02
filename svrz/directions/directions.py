@@ -1,4 +1,4 @@
-from torch import Generator, Tensor, dtype, randn, eye, randperm
+from torch import Generator, Tensor, dtype, randn, eye, randperm, float32
 from torch.linalg import qr
 
 
@@ -27,7 +27,7 @@ class DirectionGenerator:
         NotImplementedError: If the __call__ method is not implemented in subclasses.
     """
 
-    def __init__(self, d : int, l : int, seed : int, device : str, dtype : dtype) -> None:
+    def __init__(self, d : int, l : int, seed : int = 1231415, device : str = 'cpu', dtype : dtype = float32) -> None:
         self.d = d
         self.l = l
         self.dtype = dtype

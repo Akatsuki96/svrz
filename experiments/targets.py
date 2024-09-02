@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#import torch.optim as optim
-#from torchvision import datasets, transforms
+
+from torch.nn import BCELoss
+
 import torchvision
 from svrz.utils import TargetFunction
 
@@ -26,6 +27,24 @@ class LeastSquares(TargetFunction):
         if elem_wise:
             return norm * ( torch.einsum('bd,bd->b', self.data.A[z, :], x)  - self.data.y[z]).view(z.shape[0], 1).norm(p = 2, dim=1, keepdim=True).square_()
         return  norm * ( torch.matmul(x, self.data.A[z, :].T)  - self.data.y[z]).norm(p = 2, dim = 1, keepdim=True).square_()
+
+
+class BBClassification(TargetFunction):
+    
+    def __init__(self, dataset, lam = 1e-3,seed: int = 12131415):
+        super().__init__(dataset.n, seed)
+        self.dataset = dataset
+        self.lam = lam
+        self.loss = BCELoss(reduction='none')
+        
+    def __call__(self, w, z=None, elem_wise = False):
+        if z is None:
+            return self.loss(torch.sigmoid(torch.matmul(w, self.dataset.X.T)), self.dataset.y.repeat(w.shape[0]).view(w.shape[0], -1)).mean(dim=1, keepdim=True) 
+        if not elem_wise:
+            return self.loss(torch.sigmoid(torch.matmul(w, self.dataset.X.T[:, z])), self.dataset.y[z].repeat(w.shape[0]).view(w.shape[0], -1)).mean(dim=1, keepdim=True)
+        return self.loss(torch.einsum('bd,bd->b', self.dataset.X[z, :], w).sigmoid(), self.dataset.y[z]).view(z.shape[0], 1).mean(dim=1, keepdim=True)
+
+
 
 
 class HyperparamTuning(TargetFunction):

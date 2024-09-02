@@ -8,7 +8,7 @@ from sklearn.datasets import load_svmlight_file
 def load_libsvm_data(datapath, device = 'cpu', dtype = torch.float32):
     X, y = load_svmlight_file(datapath)
     X = torch.from_numpy(X.toarray()).to(dtype)
-    y = torch.Tensor(y, device=device)
+    y = torch.Tensor(y, device=device).to(dtype)
     return X, y
 
 
@@ -35,6 +35,22 @@ class SyntheticDataset(Dataset):
     def __getitem__(self, index):
         return self.A[index, :], self.y[index]       
                 
+class RealDataset(Dataset):
+    
+    def __init__(self, X, y) -> None:
+        super().__init__()
+        self.X = X
+        self.y = y
+        self.n = self.X.shape[0]
+        self.d = self.X.shape[1]
+        
+    def __len__(self):
+        return self.n
+    
+    def __getitem__(self, index):
+        return self.X[index,:], self.y[index]
+                
+                
     
 class LibSVMDataset(Dataset):
     
@@ -42,6 +58,7 @@ class LibSVMDataset(Dataset):
         super().__init__()
         self.data_path = data_path
         self.X, self.y = load_libsvm_data(data_path, device=device, dtype=dtype)
+        self.d = self.X.shape[1]
         self.n = self.X.shape[0]
     
     def __len__(self):
