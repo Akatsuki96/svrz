@@ -60,7 +60,7 @@ spider_szo = SpiderSZO(d = d, l = l, dtype =dtype, device =device, seed = seed)
 zo_spider_coord = ZOSpiderCoord(d = d, batch_size=1, dtype =dtype, device =device, seed = seed)
 
 osvrz = OSVRZ(P = QRDirections(d = d, l = l, seed = seed, device = device, dtype = dtype), batch_size=1, seed=seed)
-budget = 1000000
+budget = 2000000
 
 out_path = "./results/bb_class/phishing"
 

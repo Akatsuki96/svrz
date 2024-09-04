@@ -30,6 +30,8 @@ X_tr, y_tr = load_libsvm_data(datapath="/data/mrando/ijcnn1/ijcnn1.tr", dtype=dt
 X_te, y_te = load_libsvm_data(datapath="/data/mrando/ijcnn1/ijcnn1.t", dtype=dtype, device=device)
 
 
+print(X_tr.shape, X_te.shape)
+#exit()
 training_set = RealDataset(*standardize(X_tr, y_tr))
 test_set     = RealDataset(*standardize(X_te, y_te))
 
@@ -59,7 +61,7 @@ spider_szo = SpiderSZO(d = d, l = l, dtype =dtype, device =device, seed = seed)
 zo_spider_coord = ZOSpiderCoord(d = d, batch_size=1, dtype =dtype, device =device, seed = seed)
 
 osvrz = OSVRZ(P = QRDirections(d = d, l = l, seed = seed, device = device, dtype = dtype), batch_size=1, seed=seed)
-budget = 1000000
+budget = 2000000
 
 out_path = "./results/bb_class/ijcnn1"
 

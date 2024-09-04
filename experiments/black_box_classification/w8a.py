@@ -26,10 +26,8 @@ seed = 123131415
 generator = torch.Generator().manual_seed(seed)
 
 
-X, y = load_libsvm_data(datapath="/data/mrando/german/german.numer", dtype=dtype, device=device)
-
-
-X_tr, X_te, y_tr, y_te = train_test_split(X, y, training_fraction=training_fraction, generator=generator)
+X_tr, y_tr = load_libsvm_data(datapath="/data/mrando/w8a/w8a", dtype=dtype, device=device)
+X_te, y_te = load_libsvm_data(datapath="/data/mrando/w8a/w8a.t", dtype=dtype, device=device)
 
 training_set = RealDataset(*standardize(X_tr, y_tr))
 test_set = RealDataset(*standardize(X_te, y_te))
@@ -60,9 +58,9 @@ spider_szo = SpiderSZO(d = d, l = l, dtype =dtype, device =device, seed = seed)
 zo_spider_coord = ZOSpiderCoord(d = d, batch_size=1, dtype =dtype, device =device, seed = seed)
 
 osvrz = OSVRZ(P = QRDirections(d = d, l = l, seed = seed, device = device, dtype = dtype), batch_size=1, seed=seed)
-budget = 1000000
+budget = 2000000
 
-out_path = "./results/bb_class/german"
+out_path = "./results/bb_class/w8a"
 
 os.makedirs(out_path, exist_ok=True)
 
@@ -81,7 +79,7 @@ osvrz_result = test_optimizer(target, "osvrz", osvrz, x0, T, m, 0.1, h, test_set
 
 cost_per_iter = (4 * m + d * (l + 1))
 T = budget // cost_per_iter
-szvr_g_result = test_optimizer(target, "szvr_g", szvr_g, x0, T, m, 0.01, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
+szvr_g_result = test_optimizer(target, "szvr_g", szvr_g, x0, T, m, 0.1, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
 
 cost_per_iter = (2 * (l + 1) * m + d * (l + 1))
 T = budget // cost_per_iter

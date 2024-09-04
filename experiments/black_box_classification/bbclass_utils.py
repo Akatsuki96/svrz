@@ -32,4 +32,5 @@ def test_optimizer(target, name, optimizer, x0, T, m, gamma, h, test_set, cost_p
             f.write(f"{ris['values'][0][i]},{ris['values'][1][i]},{ris['times'][0][i]},{ris['times'][1][i]},{cost}\n")                
     with open(f"{out_path}/{name}_test_error.log", 'w') as f:
         f.write("{},{}\n".format(np.mean(te_error), np.std(te_error)))
+    print(f"[{name}] Test error: {np.mean(te_error)} +/- {np.std(te_error)}")
     return None 
