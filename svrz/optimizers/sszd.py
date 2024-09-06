@@ -26,6 +26,7 @@ class SSZD(AbsOptimizer):
         lst_evals = [1]
         num_evals = 0
         x_k = x0.clone()
+        x_iters = [x_k]
         iterator = tqdm.tqdm(range(T))
         for k in iterator:
             iteration_time = time()
@@ -42,8 +43,11 @@ class SSZD(AbsOptimizer):
             iterator.set_postfix({
 #                'x' : x_k,
                 'k' : f"{k}/{T}",
-                'f_k' : f_values[-1],
+                'f_k' : f"{f_values[-1]}",
                 '|g_k|' : g_k.norm().item(),
                 'time' : iteration_time
             })
-        return dict(x = x_k, f_values = f_values, lst_evals = lst_evals, it_times = it_times, num_evals=num_evals)
+            if k % 100 == 0:
+                x_iters.append(x_k)
+            
+        return dict(x = x_k, f_values = f_values, lst_evals = lst_evals, it_times = it_times, num_evals=num_evals, x_iters=x_iters)

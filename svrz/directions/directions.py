@@ -32,7 +32,7 @@ class DirectionGenerator:
         self.l = l
         self.dtype = dtype
         self.device = device
-        self.generator = Generator()
+        self.generator = Generator(device=device)
         self.generator.manual_seed(seed)
 
     @property

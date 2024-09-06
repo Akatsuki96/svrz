@@ -16,7 +16,7 @@ class AbsOptimizer:
         self.P_full = P_full if P_full is not None else P
         self.dtype = dtype
         self.device = device
-        self.generator = Generator()
+        self.generator = Generator(device=device)
         self.generator.manual_seed(seed)
         
             
