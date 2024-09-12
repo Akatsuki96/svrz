@@ -22,7 +22,7 @@ d = 50
 seed = 12131415
 
 
-x_star = torch.Tensor([0 for i in range(d)], device=device).to(dtype)
+x_star = torch.tensor([0 for i in range(d)], device=device, dtype=dtype)
 dataset = SyntheticDataset(x_star=x_star, n = d, seed=seed)
 generator = torch.Generator()
 
@@ -31,8 +31,8 @@ x0 = torch.ones((1, d), dtype=dtype, device=device)
 
 target = LeastSquares(data=dataset, seed = seed)
 
-budget = 1000000
-out_path = "/data/mrando/svrz_results/changing_params"
+budget = 5000000
+out_path = "/data/mrando/svrz_results/param_stability"
 
 os.makedirs(out_path, exist_ok=True)
 
@@ -84,9 +84,9 @@ h = lambda k : 1e-7#max(1e-5 / sqrt(k + 1), 1e-9)
 reps = 10
 
 #m = 50
-num_directions = [1, 5, 15, 25, 50] #i for i in range(5, d + 5, 5)]
-gammas = [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1.0]
-inner_iters = [5, 15, 25, 50]
+num_directions = [1, 5, 10, 25, 50] #i for i in range(5, d + 5, 5)]
+gammas = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+inner_iters = [5, 25, 50]
 opt_names = ['osvrz','szvr_g','zo_svrg_ave','zo_svrg_coord','zo_svrg_coord_rand','spider_szo', 'zo_spider_coord']
 
 
@@ -95,7 +95,7 @@ def execute_exp(param):
     optimizer, cost_per_iter = get_optimizer(name, d, l, m, seed=seed, device=device, dtype=dtype)
     T = budget // cost_per_iter if cost_per_iter is not None else None
     print(f"[--] Executing {name}_{l}_{gamma}_{m}")
-    opt_result = test_optimizer(f"{name}-{d}_{l}_{gamma}_{m}", optimizer, x0, T, m, gamma, h, cost_per_iter, reps = reps)
+    opt_result = test_optimizer(f"{name}-{d}_{l}_{gamma}_{m}", optimizer, x0, T, m, gamma * l/d, h, cost_per_iter, reps = reps)
     return f"{name}-{d}_{l}_{gamma}_{m}"
 
 max_workers = 4

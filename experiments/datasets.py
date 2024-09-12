@@ -7,8 +7,8 @@ from sklearn.datasets import load_svmlight_file
 
 def load_libsvm_data(datapath, device = 'cpu', dtype = torch.float32):
     X, y = load_svmlight_file(datapath)
-    X = torch.from_numpy(X.toarray()).to(dtype)
-    y = torch.Tensor(y, device=device).to(dtype)
+    X = torch.from_numpy(X.toarray()).to(dtype=dtype,device=device)
+    y = torch.tensor(y, device=device, dtype=dtype)
     return X, y
 
 
@@ -89,8 +89,8 @@ class MNISTDataset(Dataset):
                 break
             self.X.append(img[0, :, :, :].tolist())
             self.y.append(label.item())
-        self.X = torch.Tensor(self.X, device=self.device).to(dtype=self.dtype)            
-        self.y = torch.Tensor(self.y)
+        self.X = torch.tensor(self.X, device=self.device, dtype=self.dtype)            
+        self.y = torch.tensor(self.y, device=self.device)
 
     def __len__(self):
         return self.n

@@ -20,7 +20,7 @@ from svrz.directions import QRDirections, GaussianDirections, SphericalDirection
 
 
 dtype = torch.float64
-device = 'cpu'
+device = 'cuda'
 training_fraction=0.8
 seed = 123131415
 generator = torch.Generator().manual_seed(seed)
@@ -61,60 +61,60 @@ spider_szo = SpiderSZO(d = d, l = l, dtype =dtype, device =device, seed = seed)
 zo_spider_coord = ZOSpiderCoord(d = d, batch_size=1, dtype =dtype, device =device, seed = seed)
 
 osvrz = OSVRZ(P = QRDirections(d = d, l = l, seed = seed, device = device, dtype = dtype), batch_size=1, seed=seed)
-budget = 2000000
-
-out_path = "./results/bb_class/ijcnn1"
-
-os.makedirs(out_path, exist_ok=True)
+budget = 5000000
 
 
 
-gamma = lambda k : 0.1 * (l/d) * (1/sqrt(k + 1))
 
-h = lambda k : 1e-7#max(1e-5 / sqrt(k + 1), 1e-9)
-reps = 2
+reps = 10
 
-m = 100
+h = lambda k : 1e-7
 
-#def test_optimizer(target, name, optimizer, x0, T, m, gamma, h, test_set, cost_per_iter = None, reps = 10, out_path='./'):
+stepsize_const = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0]) * (l / d)
+inner_iters = [50, 100, 200]
 
-cost_per_iter = (2 * (l + 1)  * m + d * (d + 1) )
-T = budget // cost_per_iter
-osvrz_result = test_optimizer(target, "osvrz", osvrz, x0, T, m, 0.1, h, test_set, cost_per_iter, reps = reps, out_path=out_path)
+for gamma_c in stepsize_const:
+    for m in inner_iters:
+        
+        out_path = f"/data/mrando/svrz_results/bb_class/ijcnn1/ijcnn1_{gamma_c}_{m}"
+        os.makedirs(out_path, exist_ok=True)
 
-cost_per_iter = (4 * m + d * (l + 1))
-T = budget // cost_per_iter
-szvr_g_result = test_optimizer(target, "szvr_g", szvr_g, x0, T, m,   0.1,   h, test_set, cost_per_iter, reps = reps, out_path=out_path)
+        gamma = lambda k : gamma_c  * (1/sqrt(k + 1))
 
-cost_per_iter = (2 * (l + 1) * m + d * (l + 1))
-T = budget // cost_per_iter
-zosvrg_ave_result = test_optimizer(target, "zosvrg_ave",zosvrg_ave, x0, T, m,   0.1,   h, test_set,cost_per_iter, reps = reps, out_path=out_path)
+        cost_per_iter = (2 * (l + 1)  * m + d * (d + 1) )
+        T = budget // cost_per_iter
+        osvrz_result = test_optimizer(target, "osvrz", osvrz, x0, T, m, gamma_c, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
 
+        cost_per_iter = (4 * m + d * (l + 1))
+        T = budget // cost_per_iter
+        szvr_g_result = test_optimizer(target, "szvr_g", szvr_g, x0, T, m, gamma_c, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
 
-cost_per_iter = (4 * d * m + 2 * d * d)
-T = budget // cost_per_iter
-zosvrg_coo_result = test_optimizer(target, "zosvrg_coord", zosvrg_coord, x0, T, m, 0.1, h, test_set,cost_per_iter, reps = reps, out_path=out_path)
+        cost_per_iter = (2 * (l + 1) * m + d * (l + 1))
+        T = budget // cost_per_iter
+        zosvrg_ave_result = test_optimizer(target, "zosvrg_ave", zosvrg_ave, x0, T, m, gamma_c, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
 
+        cost_per_iter = (4 * d * m + 2 * d * d)
+        T = budget // cost_per_iter
+        zosvrg_coo_result = test_optimizer(target, "zosvrg_coord", zosvrg_coord, x0, T, m, gamma_c, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
 
-cost_per_iter = (4 * l  * m + 2 * d * d )
-T = budget // cost_per_iter
-zosvrg_coord_rand_result = test_optimizer(target , "zosvrg_coord_rand", zosvrg_coord_rand, x0, T, m, 0.1, h, test_set,cost_per_iter, reps = reps, out_path=out_path)
+        cost_per_iter = (4 * l * m + 2 * d * d)
+        T = budget // cost_per_iter
+        zosvrg_coord_rand_result = test_optimizer(target, "zosvrg_coord_rand", zosvrg_coord_rand, x0, T, m, gamma_c, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
 
-T  = budget 
-spider_szo_result = test_optimizer(target, "spider_szo", spider_szo, x0, T, m, 0.1, h, test_set,None, reps = reps, out_path=out_path)
+        T = budget
+        spider_szo_result = test_optimizer(target, "spider_szo", spider_szo, x0, T, m, gamma_c, h, test_set, None, reps=reps, out_path=out_path)
 
-T  = budget 
-zo_spider_coord_result = test_optimizer(target, "zo_spider_coord", zo_spider_coord, x0, T, m, 0.1, h, test_set,None, reps = reps, out_path=out_path)
+        T = budget
+        zo_spider_coord_result = test_optimizer(target, "zo_spider_coord", zo_spider_coord, x0, T, m, gamma_c, h, test_set, None, reps=reps, out_path=out_path)
 
+        cost_per_iter = (l + 1)
+        T = budget // cost_per_iter
+        sszd_result = test_optimizer(target, "sszd", sszd_opt, x0, T, None, gamma, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
 
-cost_per_iter = (l + 1)
-T = budget // cost_per_iter
-sszd_result = test_optimizer(target, "sszd", sszd_opt, x0, T, None, gamma, h, test_set,cost_per_iter, reps = reps, out_path=out_path)
+        cost_per_iter = (l + 1)
+        T = budget // cost_per_iter
+        gauss_result = test_optimizer(target, "gauss_opt", gauss_opt, x0, T, None, gamma, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
 
-cost_per_iter = (l + 1)
-T = budget // cost_per_iter
-gauss_result = test_optimizer(target, "gauss_opt", gauss_opt, x0, T, None, gamma, h, test_set,cost_per_iter, reps = reps, out_path=out_path)
-
-cost_per_iter = (l + 1)
-T = budget // cost_per_iter
-sph_result = test_optimizer(target, "sph_opt", sph_opt, x0, T, None, gamma, h, test_set, cost_per_iter, reps = reps, out_path=out_path)
+        cost_per_iter = (l + 1)
+        T = budget // cost_per_iter
+        sph_result = test_optimizer(target, "sph_opt", sph_opt, x0, T, None, gamma, h, test_set, cost_per_iter, reps=reps, out_path=out_path)
