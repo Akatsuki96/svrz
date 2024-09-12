@@ -3,13 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-directory = "/data/mrando/svrz_results/param_stability"
+directory = "/data/mrando/svrz_results/changing_params"
 
 
 num_directions = [1, 5, 10, 25] #i for i in range(5, d + 5, 5)]
-gammas = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+gammas = [1e-5, 1e-3, 1e-2, 1e-2, 1.0]#[0.0001, 0.0005, 0.001, 0.005]#, 0.01, 0.05, 0.1, 0.5]
 inner_iters = [5, 25, 50]
-opt_names = ['osvrz']
+opt_names = ['zo_svrg_coord_rand']
 
 
 # methods = [
@@ -27,9 +27,11 @@ opt_names = ['osvrz']
 # ]
 
 gamma = 0.001
-m = 5
+m = 25
 
-methods = [(f'O-SVRZ $[\\ell = {l}]$' ,  f'{directory}/osvrz-50_{l}_{gamma}_{m}.log') for l in num_directions ]
+l = 5
+
+methods = [(f'O-SVRZ $[\\gamma = {gamma}]$' ,  f'{directory}/osvrz-50_{l}_{gamma}_{m}.log') for gamma in gammas ]
 
 
 
@@ -41,9 +43,9 @@ def read_result(budget, path):
     with open(path, 'r') as f:
         for line in f.readlines():
             splitted = line.split(",")
-            mu_val += [float(splitted[0]) for _ in range(int(splitted[-1]))]
+            mu_val  += [float(splitted[0]) for _ in range(int(splitted[-1]))]
             std_val += [float(splitted[1]) for _ in range(int(splitted[-1]))]
-            mu_tim += [float(splitted[2]) for _ in range(int(splitted[-1]))]
+            mu_tim  += [float(splitted[2]) for _ in range(int(splitted[-1]))]
             std_tim += [float(splitted[3]) for _ in range(int(splitted[-1]))]
             if len(mu_val) > budget:
                 break
@@ -79,5 +81,5 @@ ax2.set_xlabel("# stochastic function values", fontsize=12)
 ax2.set_ylabel("Cost (s)", fontsize=12)
 
 fig.tight_layout()
-fig.savefig("changing_l.png", bbox_inches='tight')
+fig.savefig(f"changing_gamma_{l}_{m}.png", bbox_inches='tight')
 plt.close(fig)

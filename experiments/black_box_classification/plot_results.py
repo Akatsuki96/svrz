@@ -1,39 +1,27 @@
+import sys
 import numpy as np
 
 import matplotlib.pyplot as plt
 
 
-directory = "/data/mrando/svrz_results/param_stability"
+base_directory = "./results/bb_class"
 
 
-num_directions = [1, 5, 10, 25] #i for i in range(5, d + 5, 5)]
-gammas = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-inner_iters = [5, 25, 50]
-opt_names = ['osvrz']
-
-
-# methods = [
-#     ('O-SVRZ $[\\ell = 1]$' ,  f'{directory}/osvrz_1.log'),
-#     ('O-SVRZ $[\\ell = 5]$' ,  f'{directory}/osvrz_5.log'),
-#     ('O-SVRZ $[\\ell = 10]$' , f'{directory}/osvrz_10.log'),
-#     ('O-SVRZ $[\\ell = 15]$' , f'{directory}/osvrz_15.log'),
-#     ('O-SVRZ $[\\ell = 20]$' , f'{directory}/osvrz_20.log'),
-#     ('O-SVRZ $[\\ell = 25]$' , f'{directory}/osvrz_25.log'),
-#     ('O-SVRZ $[\\ell = 30]$' , f'{directory}/osvrz_30.log'),
-#     ('O-SVRZ $[\\ell = 35]$' , f'{directory}/osvrz_35.log'),
-#     ('O-SVRZ $[\\ell = 40]$' , f'{directory}/osvrz_40.log'),
-#     ('O-SVRZ $[\\ell = 45]$' , f'{directory}/osvrz_45.log'),
-#     ('O-SVRZ $[\\ell = 50]$' , f'{directory}/osvrz_50.log'),
-# ]
-
-gamma = 0.001
-m = 5
-
-methods = [(f'O-SVRZ $[\\ell = {l}]$' ,  f'{directory}/osvrz-50_{l}_{gamma}_{m}.log') for l in num_directions ]
-
-
-
-budget = 1000000
+dataset_name = sys.argv[1]
+directory = f"{base_directory}/{dataset_name}"
+methods = [
+    # ('FD-G' , f'{directory}/gauss_opt.log'),
+    # ('FD-S' , f'{directory}/sph_opt.log'),
+    # ('S-SZD' , f'{directory}/sszd.log'),
+    ('SZVR-G' , f'{directory}/szvr_g.log'),
+    ('Spider-SZO' , f'{directory}/spider_szo.log'),
+    ('ZO-Spider-Coord' , f'{directory}/zo_spider_coord.log'),
+    ('ZO-SVRG-Ave' , f'{directory}/zosvrg_ave.log'),
+    ('ZO-SVRG-Coord' , f'{directory}/zosvrg_coord.log'),
+    ('ZO-SVRG-Coord-Rand' , f'{directory}/zosvrg_coord_rand.log'),
+    ('O-SVRZ' , f'{directory}/osvrz.log'),
+]
+budget = 5000000
 
 def read_result(budget, path):
     mu_val, std_val = [], []
@@ -61,7 +49,7 @@ for (label, path) in methods:
     ris = read_result(budget, path)
     mu_values, std_values = ris['values']
     mu_times,  std_times  = ris['times']
-    
+    print(f"Plotting results of {label}")
     ax1.plot(range(len(mu_values)), mu_values, '-', lw=3, label=label)
     ax1.fill_between(range(len(mu_values)), mu_values - std_values, mu_values + std_values, alpha=0.6)
     ax2.plot(range(len(mu_times)), mu_times, '-', lw=3, label=label)
@@ -79,5 +67,5 @@ ax2.set_xlabel("# stochastic function values", fontsize=12)
 ax2.set_ylabel("Cost (s)", fontsize=12)
 
 fig.tight_layout()
-fig.savefig("changing_l.png", bbox_inches='tight')
+fig.savefig(f"{dataset_name}.png", bbox_inches='tight')
 plt.close(fig)

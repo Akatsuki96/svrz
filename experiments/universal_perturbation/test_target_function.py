@@ -55,6 +55,10 @@ class UniversalPerturbation(TargetFunction):
 #        print(net(v.view(-1, 1, 28, 28)))
         with torch.no_grad():
             results = torch.zeros((w.shape[0], 1), dtype=self.dtype, device=self.device)
+            num_batches = w.shape[0] // batch_size + w.shape[0] % batch_size
+            # print(batch_size, w.shape[0], num_batches)
+            # print(w[:batch_size])
+            # exit()
             for i in range(w.shape[0]):
 #                print(i)
                 v = self._apply_perturbation(X, w[i].view(1, -1), elem_wise=False).view(-1, 28 * 28)
@@ -63,15 +67,15 @@ class UniversalPerturbation(TargetFunction):
                 mask[torch.arange(mask.shape[0]), y.view(-1)] = False
                 p1 = preds.gather(1, torch.tensor([self.label], dtype=torch.int64, device=device).repeat(preds.shape[0]).view(-1, 1)).view(v.shape[0], -1)#.log()
                 p2 = preds[mask].view(mask.shape[0], -1).max(1)[0].view(-1, 1)#.log() # n x 1
-                p2[p2 < 1e-100] = 1e-100
+                p2[p2 < 1e-10] = 1e-10
                 reg = (v - X.view(-1, 28 * 28)).norm(2, keepdim=True).square()     
-                print(reg)
-                results[i] = torch.maximum(p1.log() -  p2.log() , torch.zeros_like(p1, device=device)).mean(dim=0,keepdim=True) + 0.5 * reg#.mean()
+#                print(reg)
+                results[i] = torch.maximum(p1.log() -  p2.log() , torch.zeros_like(p1, device=device)).mean(dim=0,keepdim=True) + 0.1 * reg#.mean()
             return results
 
         
 def get_data_by_label(data_set, label, dtype = torch.float32, device='cpu'):
-    indices = torch.argwhere(data_set.targets == label)[:10]
+    indices = torch.argwhere(data_set.targets == label)[:5]
     X = data_set.data[indices, :, :].view(-1, 1, 28, 28).to(dtype).to(device) / 255
     #X = X - 0.5 / 0.5
     return X, data_set.targets[indices].flatten()
@@ -101,7 +105,7 @@ target = UniversalPerturbation(X, Y, net, label=label, seed = seed, batch_size=b
 normalize = transforms.Normalize((0.5,), (0.5,))
 
 d = 28*28
-l = 10#d // 2
+l = 50#d // 2
 
 gamma = lambda k : 0.001 / sqrt(k + 1)#000001  * (1/ sqrt(k + 1)) * (5/d)
 h = lambda k : 1e-5# / (k + 1)
@@ -111,13 +115,14 @@ T = 101
 
 
 opt = OSVRZ(P = QRDirections(d = d, l = l, seed = seed, device=device, dtype=dtype), batch_size=1, seed=seed)
+#opt = SSZD(P = QRDirections(d = d, l = l, seed = seed, device=device, dtype=dtype),  seed=seed)
 x0 = torch.full((1, d), 0.1, dtype=dtype, device=device)
 
 #inds = torch.randint(0, d, (2, ), device=device)
 #x0[inds] = 0.0
 
 
-ris = opt.optimize(target, x0, m=10, T = 100, gamma=0.0001, h = h)
+ris = opt.optimize(target, x0, T = 200, gamma=0.001, m = 30, h = h)
 w = ris['x']
 x = normalize((((X[4].view(-1, 28 * 28).arctanh() + w).tanh() + 1) /2).view(1, 1, 28, 28))
 
@@ -138,16 +143,18 @@ plt.savefig("./testimg_orig.png")
 
 #for i in range(len(ris['x_iters'])):
 w = ris['x']
-x = normalize((((X[4].clone().view(-1, 28 * 28).arctanh()+ w).tanh() + 1) /2).view(1, 1, 28, 28))
-y = F.softmax(net(x), dim=1)
+for i in range(X.shape[0]):
+    x = normalize((((X[i].clone().view(-1, 28 * 28).arctanh()+ w).tanh() + 1) /2).view(1, 1, 28, 28))
+    #x = (((X[4].clone().view(-1, 28 * 28).arctanh()+ w).tanh() + 1) /2).view(1, 1, 28, 28)
+    y = F.softmax(net(normalize(x)), dim=1)
 
-print("[--] Prediction of perturbed = {}".format(y.max(1)[1]))
+    print("[--] Prediction of perturbed = {} [{}]".format(y.max(1)[1].cpu().item(), y.max(1)[0].cpu().item()))
 
-fig, ax = plt.subplots()
+    fig, ax = plt.subplots()
 
-ax.imshow( x.view(28, 28).cpu().detach().numpy(), cmap='gray')#.view(28, 28))
-plt.savefig(f"./testimg_final.png")
-plt.close(fig)
+    ax.imshow( x.view(28, 28).cpu().detach().numpy(), cmap='gray')#.view(28, 28))
+    plt.savefig(f"./testimg_final_{i}.png")
+    plt.close(fig)
 
 
 fig, ax = plt.subplots()
