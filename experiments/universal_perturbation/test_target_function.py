@@ -23,12 +23,13 @@ from targets import TargetFunction
 
 class UniversalPerturbation(TargetFunction):
     
-    def __init__(self, X, y, net, label, seed: int = 12131415, batch_size = 128, dtype = torch.float32, device = 'cpu'):
+    def __init__(self, X, y, net, label, lam = 0.5, seed: int = 12131415, batch_size = 128, dtype = torch.float32, device = 'cpu'):
         super().__init__(X.shape[0], seed)
         self.normalize = transforms.Normalize((0.5,), (0.5,))
         self.X = X#self.normalize(X)
         self.y = y
         self.net = net
+        self.lam = lam
         self.label = label
         self.batch_size = batch_size
         self.device = device
@@ -52,30 +53,33 @@ class UniversalPerturbation(TargetFunction):
         else:
             X = self.X[z, :].view(-1, 1, 28, 28)
             y = self.y[z]
-#        print(net(v.view(-1, 1, 28, 28)))
         with torch.no_grad():
             results = torch.zeros((w.shape[0], 1), dtype=self.dtype, device=self.device)
-            num_batches = w.shape[0] // batch_size + w.shape[0] % batch_size
-            # print(batch_size, w.shape[0], num_batches)
-            # print(w[:batch_size])
-            # exit()
-            for i in range(w.shape[0]):
-#                print(i)
-                v = self._apply_perturbation(X, w[i].view(1, -1), elem_wise=False).view(-1, 28 * 28)
+            num_batches = w.shape[0] // self.batch_size + int(w.shape[0] % self.batch_size > 0) if w.shape[0] > self.batch_size else w.shape[0]
+            for i in range(num_batches):
+#                print(w.shape, i, num_batches)
+                batch = w[i * self.batch_size : (i + 1) * self.batch_size].view(-1, 28 * 28)
+                v = self._apply_perturbation(X, batch, elem_wise=False).view(-1, 28 * 28) # flatten perturbed images
                 preds = F.softmax(self.net(v.view(-1, 1, 28, 28)), dim = 1)
-                mask = torch.ones_like(preds, dtype=torch.bool, device=device)
-                mask[torch.arange(mask.shape[0]), y.view(-1)] = False
-                p1 = preds.gather(1, torch.tensor([self.label], dtype=torch.int64, device=device).repeat(preds.shape[0]).view(-1, 1)).view(v.shape[0], -1)#.log()
-                p2 = preds[mask].view(mask.shape[0], -1).max(1)[0].view(-1, 1)#.log() # n x 1
+                # print(preds.shape)
+                # print(preds)
+                mask = torch.ones_like(preds, dtype=torch.bool, device=self.device)
+                mask[torch.arange(mask.shape[0]), y.repeat(batch.shape[0]).view(-1)] = False
+                p1 = preds.gather(1, torch.tensor([self.label], dtype=torch.int64, device=self.device).repeat(preds.shape[0]).view(-1, 1))#.view(v.shape[0], -1)#.log()
+                p1 = p1.view(batch.shape[0], -1)
+                p2 = preds[mask].view(mask.shape[0], -1).max(1)[0].view(batch.shape[0], -1)#.view(-1, 1)#.log() # n x 1
                 p2[p2 < 1e-10] = 1e-10
-                reg = (v - X.view(-1, 28 * 28)).norm(2, keepdim=True).square()     
-#                print(reg)
-                results[i] = torch.maximum(p1.log() -  p2.log() , torch.zeros_like(p1, device=device)).mean(dim=0,keepdim=True) + 0.1 * reg#.mean()
+ #               print(p1.shape, p2.shape)
+                diff = torch.maximum(p1.log() - p2.log(), torch.zeros_like(p1, device=self.device)).mean(dim = 1)
+               # print(v)
+#                exit()
+                reg = (v - X.view(-1, 28 * 28).repeat(batch.shape[0], 1)).view(batch.shape[0], -1, 28 * 28).norm(2, dim=2).square().mean(dim=1)
+                results[i * self.batch_size : (i + 1) * self.batch_size] = (diff + self.lam * reg).view(batch.shape[0], 1) #torch.maximum(diff  , torch.zeros_like(p1, device=device)).view(self.batch_size, ).mean(dim=0,keepdim=True) + self.lam * reg#.mean()
             return results
 
         
 def get_data_by_label(data_set, label, dtype = torch.float32, device='cpu'):
-    indices = torch.argwhere(data_set.targets == label)[:5]
+    indices = torch.argwhere(data_set.targets == label)[:20]
     X = data_set.data[indices, :, :].view(-1, 1, 28, 28).to(dtype).to(device) / 255
     #X = X - 0.5 / 0.5
     return X, data_set.targets[indices].flatten()
@@ -101,7 +105,7 @@ print("[--] Network loaded!")
 X, Y = get_data_by_label(training_set, label=label, dtype=dtype, device=device)
 print("[--] Data loaded!")
 
-target = UniversalPerturbation(X, Y, net, label=label, seed = seed, batch_size=batch_size, dtype=dtype, device=device)
+target = UniversalPerturbation(X, Y, net, label=label, lam=0.1, seed = seed, batch_size=batch_size, dtype=dtype, device=device)
 normalize = transforms.Normalize((0.5,), (0.5,))
 
 d = 28*28
@@ -116,13 +120,13 @@ T = 101
 
 opt = OSVRZ(P = QRDirections(d = d, l = l, seed = seed, device=device, dtype=dtype), batch_size=1, seed=seed)
 #opt = SSZD(P = QRDirections(d = d, l = l, seed = seed, device=device, dtype=dtype),  seed=seed)
-x0 = torch.full((1, d), 0.1, dtype=dtype, device=device)
+x0 = torch.full((1, d), 0.4, dtype=dtype, device=device)
 
 #inds = torch.randint(0, d, (2, ), device=device)
 #x0[inds] = 0.0
 
 
-ris = opt.optimize(target, x0, T = 200, gamma=0.001, m = 30, h = h)
+ris = opt.optimize(target, x0, T = 200, gamma=0.0001, m = 50, h = h)
 w = ris['x']
 x = normalize((((X[4].view(-1, 28 * 28).arctanh() + w).tanh() + 1) /2).view(1, 1, 28, 28))
 
@@ -143,16 +147,21 @@ plt.savefig("./testimg_orig.png")
 
 #for i in range(len(ris['x_iters'])):
 w = ris['x']
+
+print("W ", w.shape)
 for i in range(X.shape[0]):
     x = normalize((((X[i].clone().view(-1, 28 * 28).arctanh()+ w).tanh() + 1) /2).view(1, 1, 28, 28))
     #x = (((X[4].clone().view(-1, 28 * 28).arctanh()+ w).tanh() + 1) /2).view(1, 1, 28, 28)
-    y = F.softmax(net(normalize(x)), dim=1)
+    y = F.softmax(net(x), dim=1)
 
     print("[--] Prediction of perturbed = {} [{}]".format(y.max(1)[1].cpu().item(), y.max(1)[0].cpu().item()))
 
-    fig, ax = plt.subplots()
 
-    ax.imshow( x.view(28, 28).cpu().detach().numpy(), cmap='gray')#.view(28, 28))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+
+    ax1.imshow( x.view(28, 28).cpu().detach().numpy(), cmap='gray')#.view(28, 28))
+    ax2.imshow( X[i].view(28, 28).cpu().detach().numpy(), cmap='gray')#.view(28, 28))
+    fig.tight_layout()
     plt.savefig(f"./testimg_final_{i}.png")
     plt.close(fig)
 
