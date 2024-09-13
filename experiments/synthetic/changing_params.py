@@ -84,9 +84,9 @@ h = lambda k : 1e-7#max(1e-5 / sqrt(k + 1), 1e-9)
 reps = 10
 
 #m = 50
-num_directions = [1, 5, 10, 25] #i for i in range(5, d + 5, 5)]
-gammas = [0.01, 0.05, 0.1, 0.5] #[0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-inner_iters = [5, 25, 50]
+num_directions = [1, 5, 10, 25, 50] #i for i in range(5, d + 5, 5)]
+gammas = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+inner_iters = [100]#[5, 25, 50]
 opt_names = ['osvrz','szvr_g','zo_svrg_ave','zo_svrg_coord','zo_svrg_coord_rand','spider_szo', 'zo_spider_coord']
 
 
