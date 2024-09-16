@@ -33,9 +33,9 @@ target = LeastSquares(data=dataset, seed = seed)
 
 budget = 250000
 
-os.makedirs("./results/changing_l", exist_ok=True)
+os.makedirs("./results/changing_gamma", exist_ok=True)
 
-def test_optimizer(name, optimizer, x0, T, m, gamma, h, cost_per_iter = None, reps = 10):
+def test_optimizer(name, optimizer, x0, T, m, gamma, h, l, cost_per_iter = None, reps = 10):
     values, times = [], []
     for _ in range(reps):
         if m is None:
@@ -54,10 +54,8 @@ def test_optimizer(name, optimizer, x0, T, m, gamma, h, cost_per_iter = None, re
     if cost_per_iter is None:
         cost_per_iter = result['l_values']
             
-    with open(f"./results/changing_l/{name}.log", 'w') as f:
-        for i in range(len(ris['values'][0])):
-            cost = cost_per_iter[i] if isinstance(cost_per_iter, list) else cost_per_iter
-            f.write(f"{ris['values'][0][i]},{ris['values'][1][i]},{ris['times'][0][i]},{ris['times'][1][i]},{cost}\n")                
+    with open(f"./results/changing_gamma/{gamma}_{m}_{l}.log", 'a') as f:
+        f.write(f"{name},{target(x0).item()},{ris['values'][0][-1]},{ris['values'][1][-1]},{ris['times'][0][-1]},{ris['times'][1][-1]}\n")                
 
     return None 
 
@@ -67,13 +65,16 @@ h = lambda k : 1e-7#max(1e-5 / sqrt(k + 1), 1e-9)
 reps = 10
 
 generator = torch.Generator(device=device).manual_seed(seed)
+num_directions = [1, 10, 25, 50, 75] #+ [i for i in range(10, d + 10, 10)]
+gammas = np.logspace(-4, -1, 30)
 
 for m in [25, 50, 75]:
-    num_directions = [1] + [i for i in range(5, d + 5, 5)]
     for l in num_directions:
-        rnd_seed = torch.randint(0, 20000, size=(1,), device=device, generator=generator).cpu().item()
-        osvrz = OSVRZ(P = QRDirections(d = d, l = l, seed = rnd_seed, device = device, dtype = dtype), batch_size=1, seed=rnd_seed)
-        cost_per_iter = (2 * (l + 1)  * m + d * (d + 1) )
-        T = budget // cost_per_iter
-        osvrz_result = test_optimizer(f"osvrz_{l}_{m}", osvrz, x0, T, m, 0.01 * (l/d), h, cost_per_iter, reps = reps)
+        for gamma in gammas:
+            rnd_seed = torch.randint(0, 20000, size=(1,), device=device, generator=generator).cpu().item()
+#            osvrz = OSVRZ(P = QRDirections(d = d, l = l, seed = rnd_seed, device = device, dtype = dtype), batch_size=1, seed=rnd_seed)
+            osvrz = ZOSVRG(d=d, l=l, batch_size=1, estimator='ave', dtype=dtype, device=device, seed=rnd_seed)
+            cost_per_iter = (2 * (l + 1) * m + d * (l + 1))# (4 * m + d * (l + 1)) #(2 * (l + 1)  * m + d * (d + 1) )
+            T = budget // cost_per_iter
+            osvrz_result = test_optimizer(f"zo_svrg_ave", osvrz, x0, T, m, gamma, h, l, cost_per_iter, reps = reps)
 

@@ -3,10 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-directory = "/data/mrando/svrz_results/param_stability"
+directory = "./results/changing_l"
 
-
-num_directions = [1, 5, 10, 25, 50] #i for i in range(5, d + 5, 5)]
+d = 50
+m = 50
+num_directions = [1] + [i for i in range(5, d + 5, 5)]
 gammas = [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
 inner_iters = [5, 25, 50]
 opt_names = ['osvrz']
@@ -26,15 +27,6 @@ opt_names = ['osvrz']
 #     ('O-SVRZ $[\\ell = 50]$' , f'{directory}/osvrz_50.log'),
 # ]
 
-gamma = 0.001
-m = 50
-
-methods = [(f'O-SVRZ $[\\ell = {l}]$' ,  f'{directory}/osvrz-50_{l}_{gamma}_{m}.log') for l in num_directions ]
-
-
-
-budget = 1000000
-
 def read_result(budget, path):
     mu_val, std_val = [], []
     mu_tim, std_tim = [], []
@@ -52,32 +44,47 @@ def read_result(budget, path):
     return dict(values=(mu_val, std_val), times=(mu_tim, std_tim))
 
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+gamma = 0.01
+m = 100
 
-ax1.set_title("Function values")
-ax2.set_title("Cumulative Computational Cost")
+for m in [75]:
 
-for (label, path) in methods:
-    ris = read_result(budget, path)
-    mu_values, std_values = ris['values']
-    mu_times,  std_times  = ris['times']
-    
-    ax1.plot(range(len(mu_values)), mu_values, '-', lw=3, label=label)
-    ax1.fill_between(range(len(mu_values)), mu_values - std_values, mu_values + std_values, alpha=0.6)
-    ax2.plot(range(len(mu_times)), mu_times, '-', lw=3, label=label)
-    ax2.fill_between(range(len(mu_times)), mu_times - std_times, mu_times + std_times, alpha=0.6)
-    ris = None
+    methods = [(f'O-SVRZ $[\\ell = {l}]$' ,  f'{directory}/osvrz_{l}_{m}.log') for l in num_directions ]
 
-ax1.set_yscale('log')
-ax2.set_yscale('log')
-ax1.legend(loc='upper right')
 
-ax1.set_xlabel("# stochastic function values", fontsize=12)
-ax1.set_ylabel("$F(x^\\tau) - F(x^*)$", fontsize=12)
 
-ax2.set_xlabel("# stochastic function values", fontsize=12)
-ax2.set_ylabel("Cost (s)", fontsize=12)
+    budget = 250000
 
-fig.tight_layout()
-fig.savefig(f"changing_l_{gamma}_{m}.png", bbox_inches='tight')
-plt.close(fig)
+
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+
+    fig.suptitle(f"$m = {m}$")
+
+    ax1.set_title("Function values")
+    ax2.set_title("Cumulative Computational Cost")
+
+    for (label, path) in methods:
+        ris = read_result(budget, path)
+        mu_values, std_values = ris['values']
+        mu_times,  std_times  = ris['times']
+        
+        ax1.plot(range(len(mu_values)), mu_values, '-', lw=3, label=label)
+        ax1.fill_between(range(len(mu_values)), mu_values - std_values, mu_values + std_values, alpha=0.6)
+        ax2.plot(range(len(mu_times)), mu_times, '-', lw=3, label=label)
+        ax2.fill_between(range(len(mu_times)), mu_times - std_times, mu_times + std_times, alpha=0.6)
+        ris = None
+
+    ax1.set_yscale('log')
+    ax2.set_yscale('log')
+    ax1.legend(loc='upper right')
+
+    ax1.set_xlabel("# stochastic function values", fontsize=12)
+    ax1.set_ylabel("$F(x^\\tau) - F(x^*)$", fontsize=12)
+
+    ax2.set_xlabel("# stochastic function values", fontsize=12)
+    ax2.set_ylabel("Cost (s)", fontsize=12)
+
+    fig.tight_layout()
+    fig.savefig(f"changing_l_{gamma}_{m}.png", bbox_inches='tight')
+    plt.close(fig)

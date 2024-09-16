@@ -3,13 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-directory = "/data/mrando/svrz_results/changing_params"
+directory = "./results/changing_gamma"
 
-
-num_directions = [1, 5, 10, 25] #i for i in range(5, d + 5, 5)]
+d = 50
 gammas = [1e-5, 1e-3, 1e-2, 1e-2, 1.0]#[0.0001, 0.0005, 0.001, 0.005]#, 0.01, 0.05, 0.1, 0.5]
 inner_iters = [5, 25, 50]
-opt_names = ['zo_svrg_coord_rand']
+num_directions = [1] + [i for i in range(5, d + 5, 5)]
+gammas = np.logspace(-4, -1, 30)
+
+opt_names = ['osvrz']
 
 
 # methods = [
@@ -31,7 +33,7 @@ m = 25
 
 l = 5
 
-methods = [(f'O-SVRZ $[\\gamma = {gamma}]$' ,  f'{directory}/osvrz-50_{l}_{gamma}_{m}.log') for gamma in gammas ]
+methods = [(f'O-SVRZ $[\\gamma = {gamma}]$' ,  f'{directory}/{gamma}_{m}_{l}.log') for gamma in gammas ]
 
 
 
