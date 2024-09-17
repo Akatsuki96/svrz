@@ -1,6 +1,6 @@
-import torch
-import sys
 import os
+import sys
+import torch
 import numpy as np
 
 from bbclass_utils import test_optimizer, get_dataset
@@ -31,6 +31,7 @@ reps = 10
 
 num_directions = [d // i for i in [10, 5, 4, 3, 2, 1]] 
 gammas = np.logspace(-4, -1, 30)
+inner_iterations = [25, 50, 100]
 names = ['osvrz', 'zosvrg_ave', 'zosvrg_coord', 'szvr_g', 'zosvrg_cr', 'zospider_szo', 'zospider_coord', 'sszd', 'gauss_fd', 'sph_fd']
 out_path =  f"/data/mrando/svrz_results/black_box_class/{dataset_name}"
 os.makedirs(out_path + "/full_results", exist_ok=True)
@@ -39,7 +40,7 @@ os.makedirs(out_path + "/test_errors", exist_ok=True)
 
 for name in names:
     generator = torch.Generator(device=device).manual_seed(seed)
-    for m in [100]:#[25, 50, 100]:
+    for m in inner_iterations:
         for l in num_directions:
             for gamma in gammas:
                 ris_path = f"{out_path}/{dataset_name}_{m}_{l}_{gamma}"
