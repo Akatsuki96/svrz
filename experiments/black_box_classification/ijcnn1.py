@@ -66,7 +66,7 @@ budget = 5000000
 
 
 
-reps = 2#10
+reps = 10
 
 h = lambda k : 1e-7
 

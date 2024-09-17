@@ -1,8 +1,14 @@
+import sys
 import torch
 import numpy as np 
 
+sys.path.append("../")
+from datasets import RealDataset, load_libsvm_data
+from utils import train_test_split, standardize
 
-def test_optimizer(target, name, optimizer, x0, T, m, gamma, h, test_set, cost_per_iter = None, reps = 10, out_path='./'):
+
+
+def test_optimizer(target, optimizer, x0, T, m, gamma, h, test_set, cost_per_iter = None, reps = 10):
     values, times = [], []
     te_error = []
     for _ in range(reps):
@@ -21,16 +27,31 @@ def test_optimizer(target, name, optimizer, x0, T, m, gamma, h, test_set, cost_p
     times = np.array(times).reshape(reps, -1).cumsum(1)
     ris = {
         'values' : (values.mean(0), values.std(0)),
-        'times' : (times.mean(0), times.std(0))
+        'times' : (times.mean(0), times.std(0)),
+        'test_error' : (np.mean(te_error), np.std(te_error))
     }
     if cost_per_iter is None:
         cost_per_iter = result['l_values']
+
+    ris['cost_per_iter'] = cost_per_iter
+    return ris
             
-    with open(f"{out_path}/{name}.log", 'w') as f:
-        for i in range(len(ris['values'][0])):
-            cost = cost_per_iter[i] if isinstance(cost_per_iter, list) else cost_per_iter
-            f.write(f"{ris['values'][0][i]},{ris['values'][1][i]},{ris['times'][0][i]},{ris['times'][1][i]},{cost}\n")                
-    with open(f"{out_path}/{name}_test_error.log", 'w') as f:
-        f.write("{},{}\n".format(np.mean(te_error), np.std(te_error)))
-    print(f"[{name}] Test error: {np.mean(te_error)} +/- {np.std(te_error)}")
-    return None 
+
+
+def get_dataset(name, dtype = torch.float64, device = 'cpu', generator = None):
+    if name == 'ijcnn1':
+        X_tr, y_tr = load_libsvm_data(datapath="/data/mrando/ijcnn1/ijcnn1.tr", dtype=dtype, device=device)
+        X_te, y_te = load_libsvm_data(datapath="/data/mrando/ijcnn1/ijcnn1.t", dtype=dtype, device=device)
+    elif name == 'phishing':
+        if generator is None:
+            generator = torch.Generator(device=device)
+        X, y = load_libsvm_data(datapath="/data/mrando/phishing/phishing", dtype=dtype, device=device)
+        X_tr, X_te, y_tr, y_te = train_test_split(X, y, training_fraction=0.8, generator=generator)
+    elif name == 'w8a':
+        X_tr, y_tr = load_libsvm_data(datapath="/data/mrando/w8a/w8a", dtype=dtype, device=device)
+        X_te, y_te = load_libsvm_data(datapath="/data/mrando/w8a/w8a.t", dtype=dtype, device=device)
+    else:
+        raise ValueError("Dataset unknown! name must be ijcnn1, phishing or w8a")
+    training_set = RealDataset(*standardize(X_tr, y_tr))
+    test_set     = RealDataset(*standardize(X_te, y_te))
+    return training_set, test_set

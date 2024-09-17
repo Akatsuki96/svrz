@@ -4,6 +4,7 @@ import torch
 from time import time
 from torch import Tensor
 from typing import Dict, Callable
+from math import sqrt
 
 from svrz.utils import TargetFunction
 from svrz.directions import DirectionGenerator
@@ -21,6 +22,8 @@ class SSZD(AbsOptimizer):
         
 
     def optimize(self, f : TargetFunction, x0: Tensor,  T: int, gamma : Callable[[int], float], h : Callable[[int], float]) -> Dict:
+        if isinstance(gamma, float):
+            gamma = lambda k : gamma / sqrt(k + 1)
         f_values = [f(x0).flatten().item()]
         it_times = [0.0]
         lst_evals = [1]
