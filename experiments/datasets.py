@@ -1,6 +1,7 @@
 
 import torch
 import torchvision
+from math import sqrt
 from torch.utils.data import Dataset
 from sklearn.datasets import load_svmlight_file
 
@@ -17,6 +18,8 @@ class SyntheticDataset(Dataset):
     def __init__(self, 
                  x_star : torch.Tensor, 
                  n : int, 
+                 L : float | None = None,
+                 mu : float | None = None,
                  seed : int = 12131415) -> None:
         self.d = x_star.shape[0]
         self.n = n
@@ -26,6 +29,13 @@ class SyntheticDataset(Dataset):
         self.generator.manual_seed(seed)
         self.A = torch.randn((n, self.d), dtype = x_star.dtype, device=x_star.device, generator=self.generator)
         self.x_star = x_star
+        self.L = L
+        self.mu = mu
+        if L is not None and mu is not None:
+            U, S, V = self.A.svd()
+            S = torch.linspace(sqrt(L), sqrt(mu), steps = self.A.shape[0], dtype=x_star.dtype, device = x_star.device, requires_grad=False)
+            self.A = U @ S.diag() @ V
+
         self.y = self.A @ self.x_star
 
 

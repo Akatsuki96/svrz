@@ -67,9 +67,9 @@ h = lambda k : 1e-7#max(1e-5 / sqrt(k + 1), 1e-9)
 reps = 10
 
 generator = torch.Generator(device=device).manual_seed(seed)
+num_directions = [1] + [i for i in range(5, d + 5, 5)]
 
 for m in [25, 50, 75]:
-    num_directions = [1] + [i for i in range(5, d + 5, 5)]
     for l in num_directions:
         rnd_seed = torch.randint(0, 20000, size=(1,), device=device, generator=generator).cpu().item()
         osvrz = OSVRZ(P = QRDirections(d = d, l = l, seed = rnd_seed, device = device, dtype = dtype), batch_size=1, seed=rnd_seed)

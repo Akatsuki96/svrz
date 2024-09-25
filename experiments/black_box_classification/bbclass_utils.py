@@ -47,9 +47,13 @@ def get_dataset(name, dtype = torch.float64, device = 'cpu', generator = None):
             generator = torch.Generator(device=device)
         X, y = load_libsvm_data(datapath="/data/mrando/phishing/phishing", dtype=dtype, device=device)
         X_tr, X_te, y_tr, y_te = train_test_split(X, y, training_fraction=0.8, generator=generator)
-    elif name == 'w8a':
-        X_tr, y_tr = load_libsvm_data(datapath="/data/mrando/w8a/w8a", dtype=dtype, device=device)
-        X_te, y_te = load_libsvm_data(datapath="/data/mrando/w8a/w8a.t", dtype=dtype, device=device)
+    elif name == 'mushrooms':
+        X, y = load_libsvm_data(datapath="/data/mrando/mushrooms/mushrooms", dtype=dtype, device=device)
+        y[y==1] = -1.0
+        y[y==2] = 1.0        
+        if generator is None:
+            generator = torch.Generator(device=device)
+        X_tr, X_te, y_tr, y_te = train_test_split(X, y, training_fraction=0.8, generator=generator)
     else:
         raise ValueError("Dataset unknown! name must be ijcnn1, phishing or w8a")
     training_set = RealDataset(*standardize(X_tr, y_tr))

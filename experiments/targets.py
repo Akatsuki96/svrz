@@ -14,7 +14,7 @@ class LeastSquares(TargetFunction):
     
     def __init__(self, 
                  data : Dataset,
-                 seed : int = 12131415
+                 seed : int = 12131415,
                  ):
         super().__init__(data.n, seed)
         self.data = data

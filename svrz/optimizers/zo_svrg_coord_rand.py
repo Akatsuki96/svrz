@@ -27,7 +27,7 @@ class ZOSVRG_CoordRand(AbsOptimizer):
         return f(x + h * P).add_(f(x - h * P), alpha=-1).div_(2 *h).mul(P).sum(dim=0, keepdims=True)
         
     def _approx_sto_grad(self, f, x, z, fx, h, P):
-        return f(x + h * P, z, elem_wise=True).add_(fx, alpha=-1).div_(h).mul(P).sum(dim=0, keepdims=True).mul_(self.P.d)
+        return f(x + h * P, z, elem_wise=True).add_(fx, alpha=-1).div_(h).mul(P).sum(dim=0, keepdims=True).mul_(self.P.d / self.P.l)
 
 
     def optimize(self, 

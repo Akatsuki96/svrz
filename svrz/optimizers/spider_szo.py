@@ -26,7 +26,7 @@ class SpiderSZO(AbsOptimizer):
         return f(x + h * self.I).add_(fx, alpha=-1).div_(h).mul(self.I).sum(dim=0, keepdims=True)
 
     def _approx_sto_grad(self, f, x, z, fx, h, P):
-        return f(x + h * P, z, elem_wise=True).add_(fx, alpha=-1).div_(h).mul(P).sum(dim=0, keepdims=True)
+        return f(x + h * P, z, elem_wise=True).add_(fx, alpha=-1).div_(h).mul(P).sum(dim=0, keepdims=True).mul_(1/ self.P.l)
 
 
     def optimize(self, 

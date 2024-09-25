@@ -63,8 +63,8 @@ reps = 10
 
 h = lambda k : 1e-7
 
-stepsize_const = np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0]) * (l / d)
-inner_iters = [50, 100, 200]
+stepsize_const = [0.0001] #np.array([0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0]) * (l / d)
+inner_iters = [30]#, 100, 200]
 
 for gamma_c in stepsize_const:
     for m in inner_iters:

@@ -21,9 +21,7 @@ class SSZD(AbsOptimizer):
         return f(x + h * P_k, z).add_(fx, alpha=-1).div_(h).mul(P_k).sum(dim=0, keepdims=True).mul_(self.nrm_const)
         
 
-    def optimize(self, f : TargetFunction, x0: Tensor,  T: int, gamma : Callable[[int], float], h : Callable[[int], float]) -> Dict:
-        if isinstance(gamma, float):
-            gamma = lambda k : gamma / sqrt(k + 1)
+    def optimize(self, f : TargetFunction, x0: Tensor,  T: int, gamma : float, h : Callable[[int], float]) -> Dict:
         f_values = [f(x0).flatten().item()]
         it_times = [0.0]
         lst_evals = [1]
@@ -34,7 +32,7 @@ class SSZD(AbsOptimizer):
         for k in iterator:
             iteration_time = time()
             z_k = f.sample_z()
-            gamma_k, h_k = gamma(k), h(k)
+            gamma_k, h_k = gamma / sqrt(k + 1), h(k)
             f_k = f(x_k, z_k).flatten().item()
             g_k = self._approx_grad(f, x_k, z_k, f_k, h_k)
             x_k = x_k - gamma_k * g_k
