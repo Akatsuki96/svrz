@@ -21,17 +21,17 @@ class LeastSquares(TargetFunction):
         
     def __call__(self, x, z = None, elem_wise = False):
         if z is None:
-            return (1 / x.shape[1]) * (torch.matmul(x, self.data.A.T) - self.data.y).norm(p=2, dim=1, keepdim=True).square_()
+            return (1 / x.shape[1]) * (torch.matmul(x, self.data.A.T) - self.data.y).norm(p=2, dim=1, keepdim=True).square_() 
 
         norm = 1.0 / z.shape[0] if len(z.shape) > 0 else 1.0
         if elem_wise:
-            return norm * ( torch.einsum('bd,bd->b', self.data.A[z, :], x)  - self.data.y[z]).view(z.shape[0], 1).norm(p = 2, dim=1, keepdim=True).square_()
-        return  norm * ( torch.matmul(x, self.data.A[z, :].T)  - self.data.y[z]).norm(p = 2, dim = 1, keepdim=True).square_()
+            return norm * ( torch.einsum('bd,bd->b', self.data.A[z, :], x)  - self.data.y[z]).view(z.shape[0], 1).norm(p = 2, dim=1, keepdim=True).square_() 
+        return  norm * ( torch.matmul(x, self.data.A[z, :].T)  - self.data.y[z]).norm(p = 2, dim = 1, keepdim=True).square_() 
 
 
 class BBClassification(TargetFunction):
     
-    def __init__(self, dataset, lam = 1e-3,seed: int = 12131415):
+    def __init__(self, dataset, lam = 1e-7, seed: int = 12131415):
         super().__init__(dataset.n, seed)
         self.dataset = dataset
         self.lam = lam
@@ -39,10 +39,11 @@ class BBClassification(TargetFunction):
         
     def __call__(self, w, z=None, elem_wise = False):
         if z is None:
-            return self.loss(torch.sigmoid(torch.matmul(w, self.dataset.X.T)), self.dataset.y.repeat(w.shape[0]).view(w.shape[0], -1)).mean(dim=1, keepdim=True) 
+            return self.loss(torch.sigmoid(torch.matmul(w, self.dataset.X.T)), self.dataset.y.repeat(w.shape[0]).view(w.shape[0], -1)).mean(dim=1, keepdim=True) + self.lam * w.norm(p=2, dim=1, keepdim=True)
+
         if not elem_wise:
-            return self.loss(torch.sigmoid(torch.matmul(w, self.dataset.X.T[:, z])), self.dataset.y[z].repeat(w.shape[0]).view(w.shape[0], -1)).mean(dim=1, keepdim=True)
-        return self.loss(torch.einsum('bd,bd->b', self.dataset.X[z, :], w).sigmoid(), self.dataset.y[z]).view(z.shape[0], 1).mean(dim=1, keepdim=True)
+            return self.loss(torch.sigmoid(torch.matmul(w, self.dataset.X.T[:, z])), self.dataset.y[z].repeat(w.shape[0]).view(w.shape[0], -1)).mean(dim=1, keepdim=True) + self.lam * w.norm(p=2, dim=1, keepdim=True)
+        return self.loss(torch.einsum('bd,bd->b', self.dataset.X[z, :], w).sigmoid(), self.dataset.y[z]).view(z.shape[0], 1).mean(dim=1, keepdim=True) + self.lam * w.norm(p=2, dim=1, keepdim=True)
 
 
 class UniversalPerturbation(TargetFunction):
