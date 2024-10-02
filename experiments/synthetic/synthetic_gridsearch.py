@@ -21,23 +21,23 @@ seed = 12131415
 x_star = torch.tensor([0 for i in range(d)], device=device, dtype=dtype)
 
 
-budget = 500000
+budget = 100000
 
 h = lambda k : 1e-7
 reps = 10
 
-num_directions = [1] + [d // i for i in [10, 5, 4, 3, 2, 1]] + [100]
+num_directions = [1, 10, 20, 30, 40, 50] #[1] + [d // i for i in [10, 5, 4, 3, 2, 1]] + [100]
 names = ['osvrz', 'zosvrg_ave', 'zosvrg_coord', 'szvr_g', 'zosvrg_cr', 'zospider_szo', 'zospider_coord', 'sszd', 'gauss_fd', 'sph_fd']
 
-gammas = np.logspace(-4, 1, 50)
-inner_iterations = [100, 150, 200]
+gammas = np.logspace(-4, 1, 30)
+inner_iterations = [25, 50, 75]
 
 
 out_path =  f"/data/mrando/svrz_results/synthetic_comparison"
 os.makedirs(out_path + "/full_results", exist_ok=True)
 os.makedirs(out_path + "/param_tuning", exist_ok=True)
 
-Ls = [2, 10, 100]#, 1000]
+Ls = [10, 100, 1000]#, 1000]
 mus = [1]#[0, 1]
 
 #for name in names:
