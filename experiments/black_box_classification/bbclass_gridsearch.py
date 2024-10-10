@@ -30,9 +30,9 @@ h = lambda k : 1e-7
 
 reps = 10
 
-num_directions = [d // i for i in [10, 5, 4, 3, 2, 1]] 
+num_directions = [d // i for i in [10, 5, 2, 1]] 
 gammas = np.logspace(-4, 1, 50)
-inner_iterations = [50, 100, 150]
+inner_iterations = [25, 50, 100]
 names = ['osvrz', 'zosvrg_ave', 'zosvrg_coord', 'szvr_g', 'zosvrg_cr', 'zospider_szo', 'zospider_coord', 'sszd', 'gauss_fd', 'sph_fd']
 out_path =  f"/data/mrando/svrz_results/black_box_class_comparison/{dataset_name}"
 os.makedirs(out_path + "/full_results", exist_ok=True)

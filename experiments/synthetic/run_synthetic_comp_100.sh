@@ -1,0 +1,10 @@
+nohup python3 synthetic_gridsearch.py "osvrz" 100 &
+nohup python3 synthetic_gridsearch.py "zosvrg_ave" 100 &
+nohup python3 synthetic_gridsearch.py "zosvrg_coord" 100 &
+nohup python3 synthetic_gridsearch.py "szvr_g" 100 &
+nohup python3 synthetic_gridsearch.py "zosvrg_cr" 100 &
+nohup python3 synthetic_gridsearch.py "zospider_szo" 100 &
+nohup python3 synthetic_gridsearch.py "zospider_coord" 100 &
+nohup python3 synthetic_gridsearch.py "sszd" 100 &
+nohup python3 synthetic_gridsearch.py "gauss_fd" 100 &
+nohup python3 synthetic_gridsearch.py "sph_fd" 100 &
