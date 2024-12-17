@@ -53,37 +53,7 @@ class DirectionGenerator:
         raise NotImplementedError("Call method is implemented in subclasses!")
 
 
-class GaussianDirections(DirectionGenerator):
-    
-    def __call__(self) -> Tensor:
-        return randn(size=(self.l, self.d), dtype=self.dtype, device=self.device, generator=self.generator)
 
-class SphericalDirections(DirectionGenerator):
-    """
-    Class representing a direction generator for generating spherical directions.
-
-    Summary:
-        Generates spherical directions by creating a random tensor and normalizing columns to unit vectors.
-        The generated directions are transposed to switch rows and columns.
-
-    """
-
-    def __call__(self) -> Tensor:
-        """
-        Method to generate spherical directions by normalizing columns to unit vectors.
-
-        Summary:
-            Generates spherical directions by creating a random tensor and normalizing columns to unit vectors.
-            The generated directions are transposed to switch rows and columns.
-
-        Returns:
-            Tensor: The transposed tensor representing the spherical directions.
-        """
-
-        # Generate a random tensor and normalize columns to unit vectors
-        P = randn(size=(self.d, self.l), dtype=self.dtype, device=self.device, generator=self.generator)
-        P.div_(P.norm(dim=0, p=2))
-        return P.T  # Transpose to switch rows and columns
     
 class QRDirections(DirectionGenerator):
     """
@@ -118,35 +88,3 @@ class HouseholderDirections(DirectionGenerator):
         return (eye(self.d, self.l, dtype=self.dtype, device=self.device) - 2 * v.outer(v[:self.l])).T
 
 
-class CoordinateDirections(DirectionGenerator):
-    """
-    Class representing a direction generator for generating coordinate directions.
-
-    Summary:
-        Generates coordinate directions based on the dimensions and random indices.
-        If the number of rows equals the number of columns, it returns the identity matrix; otherwise, it selects columns based on random indices.
-
-    """
-
-    def __init__(self, d : int, l : int, seed : int, device : str, dtype : dtype) -> None:
-        super().__init__(d=d, l=l, seed=seed, device=device, dtype=dtype)    
-        self.I = eye(d, device=device, dtype=dtype)
-        
-    def __call__(self) -> Tensor:
-        """
-        Method to generate coordinate directions based on dimensions and random indices.
-
-        Summary:
-            Generates coordinate directions by selecting columns from the identity matrix based on random indices.
-            If the number of rows equals the number of columns, it returns the identity matrix; otherwise, it selects columns based on random indices.
-
-        Returns:
-            Tensor: The transposed tensor representing the generated coordinate directions.
-        """
-
-        if self.d == self.l:
-            return self.I
-        
-        indices = randperm(self.d, device=self.device, generator=self.generator)[:self.l]
-        return self.I[:, indices].T
-        

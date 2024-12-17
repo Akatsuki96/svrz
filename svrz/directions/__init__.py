@@ -1,10 +1,7 @@
-from svrz.directions.directions import DirectionGenerator, SphericalDirections , QRDirections, CoordinateDirections, HouseholderDirections, GaussianDirections
+from svrz.directions.directions import DirectionGenerator, QRDirections, HouseholderDirections
 
 __all__ = (
     'DirectionGenerator',
-    'GaussianDirections',
-    'SphericalDirections', 
     'QRDirections', 
-    'CoordinateDirections',
     'HouseholderDirections'
 )

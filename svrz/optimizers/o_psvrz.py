@@ -1,21 +1,24 @@
-
-import tqdm
 import torch
 from time import time
 from torch import Tensor
 from typing import Dict, Callable
 
 from svrz.utils import TargetFunction
-from svrz.directions import DirectionGenerator, CoordinateDirections, SphericalDirections
+from svrz.prox import ProxOperator
+from svrz.directions import DirectionGenerator
 from svrz.optimizers.abs_opt import AbsOptimizer
 
-class OSVRZ(AbsOptimizer):
+
+
+
+class OPSVRZ(AbsOptimizer):
 
     def __init__(self, 
                  P : DirectionGenerator,  
                  batch_size : int = 1,
+                 prox : ProxOperator | None = None,
                  seed : int = 12131415):
-        super().__init__(P = P, P_full = None, seed=seed)
+        super().__init__(P = P, P_full = None, prox = prox, seed=seed)
         self.nrm_const = P.d / P.l
         self.batch_size = batch_size
         self.I = torch.eye(P.d, dtype = P.dtype, device=P.device)
@@ -30,14 +33,17 @@ class OSVRZ(AbsOptimizer):
                  T: int, # number of outer iterations
                  m : int, # number of inner iterations
                  gamma : float, # stepsize 
-                 h : Callable[[int], float] # smoothing parameter
+                 h : Callable[[int], float], # smoothing parameter
+                 callback : Callable[[Tensor, float, int], None] | None = None # callback
                  ) -> Dict:
-        f_values = [f(x0).flatten().item()]
-        it_times = [0.0]
+        callback = callback if callback is not None else lambda x,t,iter:None
+#        f_values = [f(x0).flatten().item()]
+#        it_times = [0.0]
         x_tau = x0.clone()
-        f_tau = f_values[-1]
-        iterator = tqdm.tqdm(range(T))
-        for tau in iterator:
+        f_tau = f(x0).flatten().item()
+        callback(x_tau, 0.0, 0)
+#        iterator = tqdm.tqdm(range(T))
+        for tau in range(T):
             iteration_time = time()
             h_tau = h(tau)
             g_full = self._approx_grad(f, x_tau, None, f_tau, h_tau, self.I)
@@ -47,16 +53,17 @@ class OSVRZ(AbsOptimizer):
                 P_k = self.P()
                 g_tau = self._approx_grad(f, x_tau, z_k, f(x_tau, z_k).flatten().item(), h_tau, P_k)
                 g_k = self._approx_grad(f, x_k, z_k, f(x_k, z_k).flatten().item(), h_tau, P_k)
-                x_k = x_k - gamma * (g_k - g_tau + g_full)
+                x_k = self.prox(x_k - gamma * (g_k - g_tau + g_full), gamma)
             x_tau = x_k
             f_tau = f(x_tau).flatten().item()
             iteration_time = time() - iteration_time
-            f_values.append(f_tau)
-            it_times.append(iteration_time)
-            iterator.set_postfix({
-                'k' : f"{tau}/{T}",
-                'f_k' : f_values[-1],
-                'time' : iteration_time
-            })
-        return dict(x = x_tau, f_values = f_values, it_times = it_times)
+            callback(x_tau, iteration_time, tau + 1)
+#            f_values.append(f_tau)
+#            it_times.append(iteration_time)
+            # iterator.set_postfix({
+            #     'k' : f"{tau}/{T}",
+            #     'f_k' : f_values[-1],
+            #     'time' : iteration_time
+            # })
+        return x_tau #dict(x = x_tau, f_values = f_values, it_times = it_times)
 

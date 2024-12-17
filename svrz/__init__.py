@@ -1,11 +1,6 @@
-from svrz.optimizers import SSZD, ZOSVRG, SZVR_G, ZOSVRG_CoordRand, SpiderSZO, ZOSpiderCoord, OSVRZ
+from svrz.optimizers import AbsOptimizer, OPSVRZ
 
 __all__ = (
-    'SSZD',
-    'OSVRZ',
-    'ZOSVRG',
-    'SZVR_G',
-    'SpiderSZO',
-    'ZOSpiderCoord',
-    'ZOSVRG_CoordRand',
+    'AbsOptimizer',
+    'OPSVRZ',
 )
