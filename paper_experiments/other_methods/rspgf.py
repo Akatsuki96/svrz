@@ -35,6 +35,7 @@ class RSPGF(AbsOptimizer):
                  f : TargetFunction, 
                  x0: Tensor,  
                  T: int, 
+                 m : int,
                  gamma : float, 
                  h : Callable[[int], float],
                  callback : Callable[[Tensor, float, int], None] | None = None # callback
