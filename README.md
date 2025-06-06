@@ -1,5 +1,5 @@
-# ssvr
-Structured Stochastic Variance Reduced methods
+# VR-SZD
+Variance Reduced Structured Zeroth-order Descent method
 
 
 # Setup

@@ -52,7 +52,7 @@ b = 1
 h = lambda k : 1e-5
 reps = 10
 
-gammas =    [0.001, 0.01, 0.1, 1.0]
+gammas = [1e-7, 1e-5, 1e-4, 1e-3, 1e-2] #  [0.001, 0.01, 0.1, 1.0]
 f0 = target.full_target(x0, elem_wise=False).item()
 for (i, gamma) in enumerate(gammas):
     print(f"[{opt_name}] gamma = {gamma}")

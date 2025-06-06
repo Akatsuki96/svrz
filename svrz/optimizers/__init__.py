@@ -1,7 +1,7 @@
 from svrz.optimizers.abs_opt import AbsOptimizer
-from svrz.optimizers.o_psvrz import OPSVRZ
+from svrz.optimizers.vr_szd import VRSZD
 
 __all__ = (
     'AbsOptimizer',
-    'OPSVRZ',
+    'VRSZD',
 )

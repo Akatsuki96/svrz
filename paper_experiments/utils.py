@@ -3,7 +3,7 @@ import numpy as np
 
 from torch.utils.data import random_split
 
-from svrz.optimizers import OPSVRZ
+from svrz.optimizers import VRSZD
 from svrz.directions import QRDirections
 from svrz.prox import ProxOperator
 
@@ -86,8 +86,8 @@ def get_optimizer(name, d, l, prox : ProxOperator, b = 1, dtype = torch.float64,
         return ZOPSVRG(d = d, l = l, dir_type='gaussian', prox = prox, dtype = dtype, device = device, seed = seed)
     elif name == 'zo_psvrg_coord':
         return ZOPSVRG(d = d, l = d, dir_type='coordinate', prox = prox, dtype = dtype, device = device, seed = seed)
-    elif name == 'opsvrz':
-        return OPSVRZ(P = QRDirections(d = d, l = l, seed = seed, device = device, dtype = dtype), batch_size=b, prox=prox, seed=seed)
+    elif name == 'vr_szd':
+        return VRSZD(P = QRDirections(d = d, l = l, seed = seed, device = device, dtype = dtype), batch_size=b, prox=prox, seed=seed)
     raise ValueError(f"Algorithm {name} is unknown!")
 
 
@@ -102,6 +102,6 @@ def get_cost_per_iter(name, d, l, m, n, b):
         return 2 * d * n + 4 * m * l
     elif name == 'zo_psvrg_coord':
         return 2 * d * n + 4 * m * d
-    elif name == 'opsvrz':
+    elif name == 'vr_szd':
         return n * (d + 1) + 2 * b * m * (l + 1)
     raise ValueError(f"Algorithm {name} is unknown!")

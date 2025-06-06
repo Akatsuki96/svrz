@@ -11,7 +11,7 @@ from svrz.optimizers.abs_opt import AbsOptimizer
 
 
 
-class OPSVRZ(AbsOptimizer):
+class VRSZD(AbsOptimizer):
 
     def __init__(self, 
                  P : DirectionGenerator,  
@@ -38,12 +38,11 @@ class OPSVRZ(AbsOptimizer):
                  callback : Callable[[Tensor, float, int], None] | None = None # callback
                  ) -> Dict:
         callback = callback if callback is not None else lambda x,t,iter:None
-#        f_values = [f(x0).flatten().item()]
-#        it_times = [0.0]
+
         x_tau = x0.clone()
         f_tau = f(x0).flatten().item()
         callback(x_tau, 0.0, 0)
-#        iterator = tqdm.tqdm(range(T))
+
         for tau in range(T):
             iteration_time = time()
             h_tau = h(tau)
@@ -59,12 +58,6 @@ class OPSVRZ(AbsOptimizer):
             f_tau = f(x_tau).flatten().item()
             iteration_time = time() - iteration_time
             callback(x_tau, iteration_time, tau + 1)
-#            f_values.append(f_tau)
-#            it_times.append(iteration_time)
-            # iterator.set_postfix({
-            #     'k' : f"{tau}/{T}",
-            #     'f_k' : f_values[-1],
-            #     'time' : iteration_time
-            # })
-        return x_tau #dict(x = x_tau, f_values = f_values, it_times = it_times)
+
+        return x_tau 
 

@@ -10,7 +10,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 result_path = sys.argv[1]
 
-algorithms= ["rspgf", "zo_psvrg_gaus", "zo_psvrg_sph", "zo_psvrg_coord", "zo_pspider", "zo_pspider_coord", "opsvrz"] #["opsvrz", "zo_psvrg_coord", "zo_psvrg_gaus", "zo_psvrg_sph", "zo_pspider_coord", "zo_pspider", "rspgf"]
+algorithms= ["rspgf", "zo_psvrg_gaus", "zo_psvrg_sph", "zo_psvrg_coord", "zo_pspider", "zo_pspider_coord", "vr_szd"] #["opsvrz", "zo_psvrg_coord", "zo_psvrg_gaus", "zo_psvrg_sph", "zo_pspider_coord", "zo_pspider", "rspgf"]
 
 algo_labels = {
     'rspgf' : 'RSPGF',
@@ -19,7 +19,7 @@ algo_labels = {
     'zo_psvrg_coord' : 'ZO-PSVRG+ [CoordSGE]',
     'zo_pspider' : 'ZO-PSpider+ [RandSGE]',
     'zo_pspider_coord' : 'ZO-PSpider+ [CoordSGE]',
-    'opsvrz' : 'VR-SZD',
+    'vr_szd' : 'VR-SZD',
 }
 
 
