@@ -19,7 +19,7 @@ algo_labels = {
     'zo_psvrg_coord' : 'ZO-PSVRG+ [CoordSGE]',
     'zo_pspider' : 'ZO-PSpider+ [RandSGE]',
     'zo_pspider_coord' : 'ZO-PSpider+ [CoordSGE]',
-    'opsvrz' : 'O-PSVRZ',
+    'opsvrz' : 'VR-SZD',
 }
 
 

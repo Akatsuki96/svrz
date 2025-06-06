@@ -25,6 +25,7 @@ class OPSVRZ(AbsOptimizer):
         
     def _approx_grad(self, f, x, z, fx, h, P):
         return f(x + h * P, z).add_(fx, alpha=-1).div_(h).mul(P).sum(dim=0, keepdims=True).mul_(P.shape[1] / P.shape[0])
+        
 
 
     def optimize(self, 

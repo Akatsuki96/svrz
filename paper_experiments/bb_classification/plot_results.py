@@ -34,7 +34,7 @@ algo_labels = {
     'zo_psvrg_coord' : 'ZO-PSVRG+ [CoordSGE]',
     'zo_pspider' : 'ZO-PSpider+ [RandSGE]',
     'zo_pspider_coord' : 'ZO-PSpider+ [CoordSGE]',
-    'opsvrz' : 'O-PSVRZ',
+    'opsvrz' : 'VR-SZD',
 }
 
 
@@ -44,6 +44,17 @@ l_values=[d // i for i in [10, 5, 2, 1]]
 m = 50
 
 T = 10000000
+
+def _read_full(algo, l, m, gamma):
+    mean_result, std_result = [], []
+    with open(f"{result_path}/{dataset_name}/full_results/{algo}_{l}_{m}_1_{gamma}.log", 'r') as f:
+        for line in f.readlines():
+            splitted = line.split(",")
+            mu, std = float(splitted[0]), float(splitted[1])
+            cost_per_iter = int(splitted[-1])
+            mean_result += [mu]
+            std_result += [std]
+    return np.array(mean_result)
 
 def read_results():
     results = {}
@@ -57,11 +68,33 @@ def read_results():
         elif algo == 'zo_psvrg_coord' or algo == 'zo_pspider_coord':
             ls = [d]
         for l in ls:
+            initializations, last_values = [], []
             with open(f"{result_path}/{dataset_name}/param_tuning/{algo}_{l}_{m}_1.log", 'r') as f:
-                last_values = [ float(line.split(',')[1]) + float(line.split(',')[2]) for line in f.readlines() if float(line.split(',')[-1]) in gammas]
-            best_idx = np.argmin(last_values)
-            if best_result is None or best_result[1] > last_values[best_idx]:
+                for line in f.readlines():
+                    splitted = line.split(",")
+                    print(splitted[-1], gammas, float(splitted[-1]) in gammas)
+                    if float(splitted[-1]) in gammas:
+                        initializations.append(float(splitted[0]))#[ float(splitted[0]) for line in f.readlines() if float(line.split(',')[-1]) in gammas]
+                        last_values.append(float(splitted[1]) + float(splitted[2]))
+#                        last_values = [ float(line.split(',')[1]) + float(line.split(',')[2]) for line in f.readlines() if float(line.split(',')[-1]) in gammas]
+            values = []
+            gamma_indices = []
+            print(last_values, initializations)
+            for i in range(len(initializations)):
+                if last_values[i] >= initializations[i]:
+                    continue
+                full_mean = _read_full(algo, l, m, gammas[i])
+#                print(np.allfull_mean <= initializations[i])
+                if np.all(full_mean <= initializations[i]):
+                    gamma_indices.append(i)
+                    values.append(last_values[i])
+                    
+            
+            best_idx = gamma_indices[np.argmin(values)] if len(values) > 0 else 0
+
+            if best_result is None or best_result[1] > last_values[best_idx] :
                 best_result = (l, last_values[best_idx], best_idx)
+                
         if algo == 'rspgf':
             best_result = (1, last_values[best_idx], best_idx)
         l, gamma = best_result[0], gammas[best_result[2]]
@@ -88,7 +121,9 @@ for algo in algorithms:
     ax.plot(range(len(full_values)), full_values,'-', label=f"{algo_labels[algo]}", lw=3, rasterized=True)
     ax.fill_between(range(len(full_values)), full_values - full_stds, full_values + full_stds, alpha=0.4, rasterized=True)
 
-ax.set_ylabel("$F(x^\\tau_0) - \\min \\, F$", fontsize=16)
+print("[--] Saving plot...")
+
+ax.set_ylabel("$F(x^\\tau_0)$", fontsize=16)
 
 ax.set_yscale("log")
 ax.set_xscale("log")
@@ -96,7 +131,7 @@ ax.set_xlabel("# evaluations", fontsize=16)
 ax.tick_params(labelsize=12)
 
 if plot_legenda:
-    ax.legend(loc='upper right', fontsize=12)
+    ax.legend(loc='lower left', fontsize=12)
 
 fig.tight_layout()
 
